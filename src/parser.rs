@@ -8,11 +8,15 @@ use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 
 pub fn parse_file(filename: &str) -> Result<Mesh> {
-    let mut mesh = Mesh::new();
-
     let mut file = fs::File::open(filename)?;
     let mut reader = BufReader::new(file);
-    let bin = is_binary(&mut reader)?;
+
+    parse(&mut reader)
+}
+
+pub fn parse<T: io::BufRead + io::Seek>(reader: &mut T) -> Result<Mesh> {
+    let bin = is_binary(reader)?;
+    let mut mesh = Mesh::new();
 
     if bin {
         // skip header
@@ -25,7 +29,7 @@ pub fn parse_file(filename: &str) -> Result<Mesh> {
         mesh.reserve(vertex_count as usize);
 
         for _ in 0..vertex_count {
-            let triangle = read_triangle(&mut reader)?; // triangle
+            let triangle = read_triangle(reader)?; // triangle
             reader.read_u16::<LittleEndian>()?; // attributes
 
             mesh.push(triangle);
@@ -33,9 +37,9 @@ pub fn parse_file(filename: &str) -> Result<Mesh> {
     } else {
         reader.seek(std::io::SeekFrom::Start(0))?;
 
-        read_ascii_line(&mut reader)?; // solid ...
+        read_ascii_line(reader)?; // solid ...
 
-        while let Some(triangle) = read_ascii_triangle(&mut reader).ok() {
+        while let Some(triangle) = read_ascii_triangle(reader).ok() {
             mesh.push(triangle);
         }
     }
@@ -43,13 +47,13 @@ pub fn parse_file(filename: &str) -> Result<Mesh> {
     Ok(mesh)
 }
 
-fn is_binary<T: io::Read + io::Seek>(reader: &mut T) -> Result<bool> {
+fn is_binary<T: io::BufRead + io::Seek>(reader: &mut T) -> Result<bool> {
     // we check if the file size matches the number of triangles
     reader.seek(std::io::SeekFrom::Start(80))?;
     let triangles = reader.read_u32::<LittleEndian>()?;
     let filesize = reader.seek(std::io::SeekFrom::End(0))?;
 
-    return Ok((triangles * 50 + 80 + 4) as u64 == filesize)
+    return Ok((triangles as u64 * 50 + 80 + 4) == filesize);
 }
 
 fn read_ascii_line<T: io::BufRead>(reader: &mut T) -> Result<String> {
@@ -100,7 +104,7 @@ fn read_ascii_triangle<T: io::BufRead>(reader: &mut T) -> Result<Triangle> {
 fn read_vec3<T: io::Read>(reader: &mut T) -> Result<Vec3> {
     let mut v = [0.0; 3];
 
-    v[0] = reader.read_f32::<LittleEndian>()?; //read_f32(file)?;
+    v[0] = reader.read_f32::<LittleEndian>()?;
     v[1] = reader.read_f32::<LittleEndian>()?;
     v[2] = reader.read_f32::<LittleEndian>()?;
 
@@ -122,7 +126,36 @@ fn read_triangle<T: io::Read>(reader: &mut T) -> Result<Triangle> {
     Ok(Triangle::new([v1, v2, v3], n))
 }
 
-#[test]
-fn parser_test() {
-    assert_eq!(true, true)
+
+#[cfg(test)]
+mod test {
+    use std::io::Cursor;
+    use crate::parser::parse;
+    use crate::mesh::*;
+
+    const TRIANGLE_DATA: &'static [u8] = include_bytes!("test_models/triangle.stl");
+    const TRIANGLE_ASCII_DATA: &'static [u8] = include_bytes!("test_models/triangle_ascii.stl");
+
+    #[test]
+    fn parser_ascii_test() {
+        let mut reader = Cursor::new(TRIANGLE_ASCII_DATA);
+
+        let mesh = parse(&mut reader).unwrap();
+
+        assert_eq!(mesh[0].vertices[0], Vec3::new(-1.0,-1.0,0.0));
+        assert_eq!(mesh[0].vertices[1], Vec3::new(1.0,-1.0,0.0));
+        assert_eq!(mesh[0].vertices[2], Vec3::new(0.0,1.0,0.0));
+    }
+
+    #[test]
+    fn parser_bin_test() {
+        let mut reader = Cursor::new(TRIANGLE_DATA);
+
+        let mesh = parse(&mut reader).unwrap();
+
+        assert_eq!(mesh[0].vertices[0], Vec3::new(-1.0,-1.0,0.0));
+        assert_eq!(mesh[0].vertices[1], Vec3::new(1.0,-1.0,0.0));
+        assert_eq!(mesh[0].vertices[2], Vec3::new(0.0,1.0,0.0));
+    }
 }
+
