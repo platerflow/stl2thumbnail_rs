@@ -6,8 +6,13 @@ use std::fs;
 use std::io;
 use std::io::BufReader;
 
-const HEADER_SIZE: usize = 80;
-const TRIANGLE_SIZE: usize = 50;
+const HEADER_SIZE: u64 = 80;
+const TRIANGLE_SIZE: u64 = 50;
+
+pub enum StlType {
+    Binary,
+    Ascii,
+}
 
 pub fn parse_file(filename: &str) -> Result<Mesh> {
     let mut file = fs::File::open(filename)?;
@@ -17,45 +22,56 @@ pub fn parse_file(filename: &str) -> Result<Mesh> {
 }
 
 pub fn parse<T: io::BufRead + io::Seek>(reader: &mut T) -> Result<Mesh> {
-    let bin = is_binary_stl(reader)?;
+    let file_type = deduce_stl_type(reader)?;
     let mut mesh = Mesh::new();
 
-    if bin {
-        // skip header
-        reader.seek(std::io::SeekFrom::Start(80))?;
+    match file_type {
+        StlType::Binary => {
+            // skip header
+            reader.seek(std::io::SeekFrom::Start(HEADER_SIZE))?;
 
-        // get the vertex count
-        let vertex_count = reader.read_u32::<LittleEndian>()?;
+            // get the vertex count
+            let vertex_count = reader.read_u32::<LittleEndian>()?;
 
-        // reserve memory
-        mesh.reserve(vertex_count as usize);
+            // reserve memory
+            mesh.reserve(vertex_count as usize);
 
-        for _ in 0..vertex_count {
-            let triangle = read_triangle(reader)?; // triangle
-            reader.read_u16::<LittleEndian>()?; // attributes
+            for _ in 0..vertex_count {
+                let triangle = read_triangle(reader)?; // triangle
+                reader.read_u16::<LittleEndian>()?; // attributes
 
-            mesh.push(triangle);
+                mesh.push(triangle);
+            }
         }
-    } else {
-        reader.seek(std::io::SeekFrom::Start(0))?;
 
-        read_ascii_line(reader)?; // solid ...
+        StlType::Ascii => {
+            reader.seek(std::io::SeekFrom::Start(0))?;
 
-        while let Some(triangle) = read_ascii_triangle(reader).ok() {
-            mesh.push(triangle);
+            read_ascii_line(reader)?; // solid ...
+
+            while let Some(triangle) = read_ascii_triangle(reader).ok() {
+                mesh.push(triangle);
+            }
         }
     }
 
     Ok(mesh)
 }
 
-fn is_binary_stl<T: io::BufRead + io::Seek>(reader: &mut T) -> Result<bool> {
-    // we check if the file size matches the number of triangles
-    reader.seek(std::io::SeekFrom::Start(80))?;
-    let triangles = reader.read_u32::<LittleEndian>()? as usize;
-    let filesize = reader.seek(std::io::SeekFrom::End(0))? as usize;
+fn deduce_stl_type<T: io::BufRead + io::Seek>(reader: &mut T) -> Result<StlType> {
+    // skip header
+    reader.seek(std::io::SeekFrom::Start(HEADER_SIZE))?;
 
-    return Ok(triangles * TRIANGLE_SIZE + HEADER_SIZE + std::mem::size_of::<u32>() == filesize);
+    // the best way to distinguish between 'ascii' and 'bin' files is to check whether the
+    // specified triangle count matches the size of the file
+    let triangles = reader.read_u32::<LittleEndian>()? as u64;
+    let filesize = reader.seek(std::io::SeekFrom::End(0))?;
+    if triangles * TRIANGLE_SIZE + HEADER_SIZE + std::mem::size_of::<u32>() as u64 == filesize {
+        return Ok(StlType::Binary);
+    }
+
+    // Note: also malformed binary STL files get classified as 'ascii'
+    Ok(StlType::Ascii)
 }
 
 fn read_ascii_line<T: io::BufRead>(reader: &mut T) -> Result<String> {
