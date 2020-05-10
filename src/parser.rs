@@ -4,8 +4,7 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use scan_fmt::*;
 use std::fs;
 use std::io;
-use std::io::prelude::*;
-use std::io::{BufRead, BufReader};
+use std::io::BufReader;
 
 const HEADER_SIZE: usize = 80;
 const TRIANGLE_SIZE: usize = 50;
@@ -66,7 +65,6 @@ fn read_ascii_line<T: io::BufRead>(reader: &mut T) -> Result<String> {
 }
 
 fn read_ascii_triangle<T: io::BufRead>(reader: &mut T) -> Result<Triangle> {
-    let mut line = String::new();
     let mut vertices = [
         Vec3::new(0.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 0.0),
@@ -99,9 +97,7 @@ fn read_ascii_triangle<T: io::BufRead>(reader: &mut T) -> Result<Triangle> {
     read_ascii_line(reader)?; // "endloop"
     read_ascii_line(reader)?; // "endfacet"
 
-    let mut t: Triangle = Triangle::new(vertices, Vec3::new(nx, ny, nz));
-
-    Ok(t)
+    Ok(Triangle::new(vertices, Vec3::new(nx, ny, nz)))
 }
 
 fn read_vec3<T: io::Read>(reader: &mut T) -> Result<Vec3> {

@@ -11,10 +11,8 @@ use encoder::encode_gif;
 use encoder::*;
 use mesh::Mesh;
 use mesh::Vec3;
-use mesh::*;
 use picture::Picture;
 use rasterbackend::RasterBackend;
-use zbuffer::ZBuffer;
 
 use clap::{App, Arg};
 use std::error::Error;
