@@ -12,8 +12,10 @@ pub struct RasterBackend {
     pub light_color: Vec3,
     pub ambient_color: Vec3,
     pub model_color: Vec3,
+    pub grid_color: Vec3,
     pub background_color: Vec4,
     pub zoom: f32,
+    pub grid_visible: bool,
     width: usize,
     height: usize,
     aspect_ratio: f32,
@@ -27,7 +29,9 @@ impl RasterBackend {
             light_color: Vec3::new(0.7, 0.7, 0.7),
             ambient_color: Vec3::new(0.4, 0.4, 0.4),
             model_color: Vec3::new(0.0, 0.45, 1.0),
+            grid_color: Vec3::new(0.0, 0.0, 0.0),
             background_color: Vec4::new(1.0, 1.0, 1.0, 1.0),
+            grid_visible: true,
             zoom: 1.0,
             width,
             height,
@@ -91,12 +95,15 @@ impl RasterBackend {
         let eye_normal = self.view_pos.normalize();
 
         // grid in x and y direction
-        draw_grid(&mut pic, &vp, aabb.lower.z);
-        draw_grid(
-            &mut pic,
-            &(vp * glm::rotation(PI / 2.0, &Vec3::new(0.0, 0.0, 1.0))),
-            aabb.lower.z,
-        );
+        if self.grid_visible {
+            draw_grid(&mut pic, &vp, aabb.lower.z, &self.grid_color);
+            draw_grid(
+                &mut pic,
+                &(vp * glm::rotation(PI / 2.0, &Vec3::new(0.0, 0.0, 1.0))),
+                aabb.lower.z,
+                &self.grid_color,
+            );
+        }
 
         for t in mesh {
             let normal = -t.normal;
@@ -234,9 +241,9 @@ fn scale_for_unitsize(mvp: &Mat4, aabb: &AABB) -> f32 {
     1.0 / ((f32::abs(max.x - min.x)).max(f32::abs(max.y - min.y)) / 2.0)
 }
 
-fn draw_grid(pic: &mut Picture, vp: &Mat4, z: f32) {
+fn draw_grid(pic: &mut Picture, vp: &Mat4, z: f32, color: &Vec3) {
     // draw grid
-    let grid_color = (0, 0, 0, 255).into();
+    let grid_color = (color.x, color.y, color.z, 1.0).into();
     let grid_count = 20;
     let grid_spacing = 2.0 / grid_count as f32;
 
