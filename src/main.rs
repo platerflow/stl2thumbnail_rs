@@ -9,8 +9,9 @@ mod zbuffer;
 
 use encoder::encode_gif;
 use encoder::*;
-use mesh::Mesh;
-use mesh::Vec3;
+use mesh::{LazyMesh, Mesh};
+use mesh::{Triangle, Vec3};
+use parser::Parser;
 use picture::Picture;
 use rasterbackend::RasterBackend;
 
@@ -93,6 +94,7 @@ fn create_turntable_animation(
 ) -> Result<(), std::io::Error> {
     let elevation_angle = elevation_angle * std::f32::consts::PI / 180.0;
     let mut backend = RasterBackend::new(256, 256);
+    backend.grid_visible = false;
     let mut pictures: Vec<Picture> = Vec::new();
 
     backend.view_pos = Vec3::new(1.0, 1.0, -elevation_angle.tan());
