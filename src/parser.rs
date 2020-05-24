@@ -4,7 +4,7 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use scan_fmt::*;
 use std::fs;
 use std::io;
-use std::io::{BufReader, Read, Seek, BufRead};
+use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
 
 const HEADER_SIZE: u64 = 80;
 const TRIANGLE_SIZE: u64 = 50;
@@ -31,11 +31,11 @@ impl<T: Read + Seek> Parser<T> {
         reader.seek(io::SeekFrom::Start(0))?;
 
         // figure out header size
-        let mut header_length= 0;
+        let mut header_length = 0;
         match stl_type {
             StlType::Binary => {
                 header_length = HEADER_SIZE;
-            },
+            }
             StlType::Ascii => {
                 while let Some(line) = read_ascii_line(&mut reader).ok() {
                     if line.starts_with("solid") {
@@ -46,11 +46,16 @@ impl<T: Read + Seek> Parser<T> {
             }
         };
 
-        Ok(Self { reader, stl_type, header_length })
+        Ok(Self {
+            reader,
+            stl_type,
+            header_length,
+        })
     }
 
     pub fn rewind(&mut self) -> Result<()> {
-        self.reader.seek(std::io::SeekFrom::Start(self.header_length))?;
+        self.reader
+            .seek(std::io::SeekFrom::Start(self.header_length))?;
         Ok(())
     }
 
@@ -71,7 +76,7 @@ impl<T: Read + Seek> Parser<T> {
                 self.rewind();
                 let count = self.reader.read_u32::<LittleEndian>()? as u64;
                 return Ok(count);
-            },
+            }
             StlType::Ascii => {
                 // we have no other choice as parsing the hole file
                 let mut count = 0;
@@ -85,19 +90,20 @@ impl<T: Read + Seek> Parser<T> {
 
     pub fn read_all(&mut self) -> Result<Mesh> {
         self.rewind();
-        let mut mesh = Mesh::new();
+        let mut triangles = vec![];
 
         while let Some(triangle) = self.next_triangle() {
-            mesh.push(triangle);
+            triangles.push(triangle);
         }
 
-        Ok(mesh)
+        Ok(Mesh::new(triangles))
     }
 }
 
 impl Parser<fs::File> {
     pub fn from_file(filename: &str) -> Result<Self> {
-        let mut file = fs::File::open(filename)?;
+        let file = fs::File::open(filename)?;
+        (&file).seek(std::io::SeekFrom::Start(0));
         // let mut reader = BufReader::new(file);
         //Self::from_buf(Box::new(file))
         // let stl_type = deduce_stl_type(&mut reader)?;
@@ -106,37 +112,6 @@ impl Parser<fs::File> {
         Self::from_buf(file)
     }
 }
-
-pub struct ParserIterator<'a, T>
-where
-    T: std::io::Read + std::io::Seek,
-{
-    parser: &'a mut Parser<T>,
-}
-
-impl<'a, T: std::io::Read + std::io::Seek> IntoIterator for &'a mut Parser<T> {
-    type Item = Triangle;
-    type IntoIter = ParserIterator<'a, T>;
-
-    fn into_iter(mut self) -> Self::IntoIter {
-        self.rewind();
-        Self::IntoIter { parser: self }
-    }
-}
-
-impl<T: std::io::Read + std::io::Seek> Iterator for ParserIterator<'_, T> {
-    type Item = Triangle;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.parser.next_triangle()
-    }
-}
-
-// impl<T: Read> BufReader<T> {
-//     fn parse_triangle() -> Option<Triangle> {
-//         None
-//     }
-// }
 
 pub fn parse_file(filename: &str) -> Result<Mesh> {
     let mut file = fs::File::open(filename)?;
@@ -147,7 +122,7 @@ pub fn parse_file(filename: &str) -> Result<Mesh> {
 
 pub fn parse<T: io::BufRead + io::Seek>(reader: &mut T) -> Result<Mesh> {
     let file_type = deduce_stl_type(reader)?;
-    let mut mesh = Mesh::new();
+    let mut triangles = Vec::new();
 
     match file_type {
         StlType::Binary => {
@@ -158,13 +133,13 @@ pub fn parse<T: io::BufRead + io::Seek>(reader: &mut T) -> Result<Mesh> {
             let vertex_count = reader.read_u32::<LittleEndian>()?;
 
             // reserve memory
-            mesh.reserve(vertex_count as usize);
+            triangles.reserve(vertex_count as usize);
 
             for _ in 0..vertex_count {
                 let triangle = read_triangle(reader)?; // triangle
                 reader.read_u16::<LittleEndian>()?; // attributes
 
-                mesh.push(triangle);
+                triangles.push(triangle);
             }
         }
 
@@ -174,12 +149,12 @@ pub fn parse<T: io::BufRead + io::Seek>(reader: &mut T) -> Result<Mesh> {
             read_ascii_line(reader)?; // solid ...
 
             while let Some(triangle) = read_ascii_triangle(reader).ok() {
-                mesh.push(triangle);
+                triangles.push(triangle);
             }
         }
     }
 
-    Ok(mesh)
+    Ok(Mesh::new(triangles))
 }
 
 fn deduce_stl_type<T: io::BufRead + io::Seek>(reader: &mut T) -> Result<StlType> {
@@ -269,7 +244,7 @@ fn read_triangle<T: io::Read>(reader: &mut T) -> Result<Triangle> {
 mod test {
     use crate::mesh::*;
     use crate::parser::{parse, Parser};
-    use std::io::Cursor;
+    use std::io::{Cursor, Read, Seek};
 
     const TRI_BIN: &'static [u8] = include_bytes!("test_models/triangle.stl");
     const TRI_ASCII: &'static [u8] = include_bytes!("test_models/triangle_ascii.stl");
@@ -281,18 +256,23 @@ mod test {
 
         let mesh = parse(&mut reader).unwrap();
 
-        assert_eq!(mesh[0].normal, Vec3::new(0.0, 0.0, 1.0));
-        assert_eq!(mesh[0].vertices[0], Vec3::new(-1.0, -1.0, 0.0));
-        assert_eq!(mesh[0].vertices[1], Vec3::new(1.0, -1.0, 0.0));
-        assert_eq!(mesh[0].vertices[2], Vec3::new(0.0, 1.0, 0.0));
+        let triangles: Vec<Triangle> = (&mesh).into_iter().collect();
+
+        assert_eq!(triangles[0].normal, Vec3::new(0.0, 0.0, 1.0));
+        assert_eq!(triangles[0].vertices[0], Vec3::new(-1.0, -1.0, 0.0));
+        assert_eq!(triangles[0].vertices[1], Vec3::new(1.0, -1.0, 0.0));
+        assert_eq!(triangles[0].vertices[2], Vec3::new(0.0, 1.0, 0.0));
     }
 
     #[test]
     fn parser_ascii_broken_test() {
+        println!("Foo");
         let mut reader = Cursor::new(TRI_ASCII_BROKEN);
 
         let mesh = parse(&mut reader).unwrap();
-        assert_eq!(mesh.len(), 0);
+        let triangles: Vec<Triangle> = (&mesh).into_iter().collect();
+
+        assert_eq!(triangles.len(), 0);
     }
 
     #[test]
@@ -300,93 +280,56 @@ mod test {
         let mut reader = Cursor::new(TRI_BIN);
 
         let mesh = parse(&mut reader).unwrap();
+        let triangles: Vec<Triangle> = (&mesh).into_iter().collect();
 
-        assert_eq!(mesh[0].normal, Vec3::new(0.0, 0.0, 1.0));
-        assert_eq!(mesh[0].vertices[0], Vec3::new(-1.0, -1.0, 0.0));
-        assert_eq!(mesh[0].vertices[1], Vec3::new(1.0, -1.0, 0.0));
-        assert_eq!(mesh[0].vertices[2], Vec3::new(0.0, 1.0, 0.0));
-    }
-
-    #[test]
-    fn parser_bin_test_lazy() {
-        let mut reader = Cursor::new(TRI_BIN);
-        let mut parser = Parser::from_buf(reader).unwrap();
-
-        let tri = parser.next_triangle();
-        println!("{:?}", tri.unwrap());
-
-        //parser.rewind();
-        for tri in &mut parser {
-            println!("{:?}", tri);
-        }
-
-        for tri in &mut parser {
-            println!("{:?}", tri);
-        }
-
-        some_function(&mut parser);
-
-        // let mesh = parse(&mut reader).unwrap();
-        //
-        // assert_eq!(mesh[0].normal, Vec3::new(0.0, 0.0, 1.0));
-        // assert_eq!(mesh[0].vertices[0], Vec3::new(-1.0, -1.0, 0.0));
-        // assert_eq!(mesh[0].vertices[1], Vec3::new(1.0, -1.0, 0.0));
-        // assert_eq!(mesh[0].vertices[2], Vec3::new(0.0, 1.0, 0.0));
-    }
-
-    #[test]
-    fn mesh_lazy_bin() {
-        let mut reader = Cursor::new(TRI_BIN);
-        let mut parser = Parser::from_buf(reader).unwrap();
-        let mut lazy_mesh = LazyMesh::new(&mut parser);
-
-        for tri in &mut lazy_mesh {
-            println!("{:?}", tri);
-        }
-
-        some_function(&mut parser);
-
-        // let mesh = parse(&mut reader).unwrap();
-        //
-        // assert_eq!(mesh[0].normal, Vec3::new(0.0, 0.0, 1.0));
-        // assert_eq!(mesh[0].vertices[0], Vec3::new(-1.0, -1.0, 0.0));
-        // assert_eq!(mesh[0].vertices[1], Vec3::new(1.0, -1.0, 0.0));
-        // assert_eq!(mesh[0].vertices[2], Vec3::new(0.0, 1.0, 0.0));
+        assert_eq!(triangles[0].normal, Vec3::new(0.0, 0.0, 1.0));
+        assert_eq!(triangles[0].vertices[0], Vec3::new(-1.0, -1.0, 0.0));
+        assert_eq!(triangles[0].vertices[1], Vec3::new(1.0, -1.0, 0.0));
+        assert_eq!(triangles[0].vertices[2], Vec3::new(0.0, 1.0, 0.0));
     }
 
     #[test]
     fn mesh_lazy_ascii() {
-        let mut reader = Cursor::new(TRI_ASCII);
-        let mut parser = Parser::from_buf(reader).unwrap();
-        let mut lazy_mesh = LazyMesh::new(&mut parser);
+        let reader = Cursor::new(TRI_ASCII);
+        let parser = Parser::from_buf(reader).unwrap();
+        let lazy_mesh = LazyMesh::new(parser);
 
+        let triangles: Vec<Triangle> = (&lazy_mesh).into_iter().collect();
 
-        // for tri in &mut lazy_mesh {
-        //     println!("{:?}", tri);
-        // }
-
-        // for tri in &mut lazy_mesh {
-        //     println!("{:?}", tri);
-        // }
-
-        // {
-        //     let v: Vec<_> = (&mut lazy_mesh).into_iter().collect();
-        //     println!("{}", v.len());
-        // }
-
-        //
-        some_function(&mut lazy_mesh);
-        some_function(&mut lazy_mesh);
-
-        // let mesh = parse(&mut reader).unwrap();
-        //
-        // assert_eq!(mesh[0].normal, Vec3::new(0.0, 0.0, 1.0));
-        // assert_eq!(mesh[0].vertices[0], Vec3::new(-1.0, -1.0, 0.0));
-        // assert_eq!(mesh[0].vertices[1], Vec3::new(1.0, -1.0, 0.0));
-        // assert_eq!(mesh[0].vertices[2], Vec3::new(0.0, 1.0, 0.0));
+        assert_eq!(triangles.len(), 2);
+        assert_eq!(
+            triangles[0],
+            Triangle {
+                vertices: [
+                    Vec3::new(-1.0, -1.0, 0.0),
+                    Vec3::new(1.0, -1.0, 0.0),
+                    Vec3::new(0.0, 1.0, 0.0)
+                ],
+                normal: Vec3::new(0.0, 0.0, 1.0),
+            }
+        );
+        assert_eq!(
+            triangles[1],
+            Triangle {
+                vertices: [
+                    Vec3::new(-1.0, -1.0, 1.0),
+                    Vec3::new(1.0, -1.0, 1.0),
+                    Vec3::new(0.0, 1.0, 1.0)
+                ],
+                normal: Vec3::new(0.0, 0.0, 1.0),
+            }
+        );
     }
 
-    fn some_function(m: impl IntoIterator<Item = Triangle>) {
+    fn some_function(m: impl IntoIterator<Item = Triangle> + Copy) {
+        for tri in m {}
+
+        for tri in m {}
+        //some_function(&mut m)
+        some_other_function(m);
+    }
+
+    fn some_other_function(m: impl IntoIterator<Item = Triangle> + Copy) {
         for tri in m {
             println!("{:?}", tri);
         }

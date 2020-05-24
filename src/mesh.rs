@@ -1,7 +1,9 @@
 use crate::parser::Parser;
+use std::cell::{Cell, RefCell};
 use std::io::{Read, Seek};
+use std::rc::Rc;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Triangle {
     pub vertices: [Vec3; 3],
     pub normal: Vec3,
@@ -14,7 +16,40 @@ impl Triangle {
 }
 
 // Mesh
-pub type Mesh = Vec<Triangle>;
+pub struct Mesh(Vec<Triangle>);
+
+impl Mesh {
+    pub fn new(data: Vec<Triangle>) -> Self {
+        Self { 0: data }
+    }
+}
+
+pub struct MeshIter<'a> {
+    mesh: &'a [Triangle],
+    i: usize,
+}
+
+impl<'a> IntoIterator for &'a Mesh {
+    type Item = Triangle;
+    type IntoIter = MeshIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        Self::IntoIter {
+            mesh: self.0.as_slice(),
+            i: 0,
+        }
+    }
+}
+
+impl<'a> Iterator for MeshIter<'a> {
+    type Item = Triangle;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let triangle = self.mesh.get(self.i).copied();
+        self.i += 1;
+        triangle
+    }
+}
 
 // glm aliases
 pub type Mat4 = glm::Mat4x4;
@@ -28,60 +63,41 @@ pub fn matmul(m: &Mat4, v: &Vec3) -> Vec3 {
 }
 
 // LazyMesh
-pub struct LazyMesh<'a, T: Read + Seek> {
-    parser: &'a mut Parser<T>,
+pub struct LazyMesh<T: Read + Seek> {
+    parser: RefCell<Box<Parser<T>>>, // inner mutability
 }
 
-impl<'a, T> LazyMesh<'a, T>
+impl<T> LazyMesh<T>
 where
     T: Read + Seek,
 {
-    pub fn new(parser: &'a mut Parser<T>) -> Self {
-        Self { parser }
+    pub fn new(parser: Parser<T>) -> Self {
+        Self {
+            parser: RefCell::new(Box::new(parser)),
+        }
     }
 }
 
 pub struct LazyMeshIter<'a, T: Read + Seek> {
-    lazy_mesh: &'a mut LazyMesh<'a, T>,
+    parser: &'a RefCell<Box<Parser<T>>>,
 }
 
-impl<'a, T: Read + Seek> IntoIterator for &'a mut LazyMesh<'a, T> {
+impl<'a, T: Read + Seek> IntoIterator for &'a LazyMesh<T> {
     type Item = Triangle;
     type IntoIter = LazyMeshIter<'a, T>;
 
-    fn into_iter(mut self) -> Self::IntoIter {
-        self.parser.rewind();
-        Self::IntoIter { lazy_mesh: self }
+    fn into_iter(self) -> Self::IntoIter {
+        self.parser.borrow_mut().rewind();
+        Self::IntoIter {
+            parser: &self.parser,
+        }
     }
 }
 
-impl<T: Read + Seek> Iterator for LazyMeshIter<'_, T> {
+impl<'a, T: Read + Seek> Iterator for LazyMeshIter<'a, T> {
     type Item = Triangle;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.lazy_mesh.parser.next_triangle()
-    }
-}
-
-pub struct LazyMeshIter2<'a, T: Read + Seek> {
-    lazy_mesh: LazyMesh<'a, T>,
-}
-
-impl<T: Read + Seek> Iterator for LazyMeshIter2<'_, T> {
-    type Item = Triangle;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.lazy_mesh.parser.next_triangle()
-    }
-}
-
-
-impl<'a, T: Read + Seek> IntoIterator for LazyMesh<'a,T> {
-    type Item = Triangle;
-    type IntoIter = LazyMeshIter2<'a, T>;
-
-    fn into_iter(mut self) -> Self::IntoIter {
-        self.parser.rewind();
-        Self::IntoIter { lazy_mesh: self }
+        self.parser.borrow_mut().next_triangle()
     }
 }
