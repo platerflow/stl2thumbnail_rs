@@ -67,13 +67,13 @@ impl<T: Read + Seek> Parser<T> {
     }
 
     pub fn triangle_count(&mut self) -> Result<u64> {
-        self.rewind();
+        self.rewind()?;
 
         match self.stl_type {
             StlType::Binary => {
                 // for binary files we can quickly read the first u32
                 // after the header which contains the triangle count
-                self.rewind();
+                self.rewind()?;
                 let count = self.reader.read_u32::<LittleEndian>()? as u64;
                 return Ok(count);
             }
@@ -89,7 +89,7 @@ impl<T: Read + Seek> Parser<T> {
     }
 
     pub fn read_all(&mut self) -> Result<Mesh> {
-        self.rewind();
+        self.rewind()?;
         let mut triangles = vec![];
 
         while let Some(triangle) = self.next_triangle() {
@@ -103,7 +103,7 @@ impl<T: Read + Seek> Parser<T> {
 impl Parser<fs::File> {
     pub fn from_file(filename: &str) -> Result<Self> {
         let file = fs::File::open(filename)?;
-        (&file).seek(std::io::SeekFrom::Start(0));
+        (&file).seek(std::io::SeekFrom::Start(0))?;
         // let mut reader = BufReader::new(file);
         //Self::from_buf(Box::new(file))
         // let stl_type = deduce_stl_type(&mut reader)?;
@@ -262,11 +262,12 @@ mod test {
         assert_eq!(triangles[0].vertices[0], Vec3::new(-1.0, -1.0, 0.0));
         assert_eq!(triangles[0].vertices[1], Vec3::new(1.0, -1.0, 0.0));
         assert_eq!(triangles[0].vertices[2], Vec3::new(0.0, 1.0, 0.0));
+
+        some_function(&mesh);
     }
 
     #[test]
     fn parser_ascii_broken_test() {
-        println!("Foo");
         let mut reader = Cursor::new(TRI_ASCII_BROKEN);
 
         let mesh = parse(&mut reader).unwrap();
@@ -294,7 +295,7 @@ mod test {
         let parser = Parser::from_buf(reader).unwrap();
         let lazy_mesh = LazyMesh::new(parser);
 
-        let triangles: Vec<Triangle> = (&lazy_mesh).into_iter().collect();
+        let triangles = (&lazy_mesh).into_iter().collect::<Vec<Triangle>>();
 
         assert_eq!(triangles.len(), 2);
         assert_eq!(

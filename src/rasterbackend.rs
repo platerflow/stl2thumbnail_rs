@@ -58,7 +58,7 @@ impl RasterBackend {
     }
 
     pub fn fit_mesh_scale(&self, mesh: &Mesh) -> f32 {
-        let aabb = AABB::new(mesh);
+        let aabb = AABB::from_iterable(mesh);
         let vp = self.view_projection(1.0);
 
         // scale the model such that is fills the entire canvas
@@ -68,7 +68,7 @@ impl RasterBackend {
     pub fn render(&self, mesh: &Mesh, model_scale: f32) -> Picture {
         let mut pic = Picture::new(self.width, self.height);
         let mut zbuf = ZBuffer::new(self.width, self.height);
-        let mut aabb = AABB::new(mesh);
+        let mut aabb = AABB::from_iterable(mesh);
 
         pic.fill(
             &(

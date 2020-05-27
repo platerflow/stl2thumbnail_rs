@@ -7,7 +7,11 @@ pub struct AABB {
 }
 
 impl AABB {
-    pub fn new(mesh: &Mesh) -> Self {
+    pub fn from_mesh(mesh: &Mesh) -> Self {
+        Self::from_iterable(mesh)
+    }
+
+    pub fn from_iterable(mesh: impl IntoIterator<Item = Triangle> + Copy) -> Self {
         let mut lower = Vec3::new(std::f32::MAX, std::f32::MAX, std::f32::MAX);
         let mut upper = Vec3::new(std::f32::MIN, std::f32::MIN, std::f32::MIN);
 
@@ -45,34 +49,40 @@ mod tests {
 
     #[test]
     fn test_bounds() {
-        let mut mesh = Mesh::new();
-        mesh.push(Triangle::new(
-            [
-                Vec3::new(1.0, 2.0, 3.0),
-                Vec3::new(-1.0, -2.0, -3.0),
-                Vec3::new(2.0, 3.0, 4.0),
-            ],
-            Vec3::new(0.0, 0.0, 0.0),
-        ));
+        let mut mesh = Mesh::new(
+            vec![
+                Triangle::new(
+                    [
+                        Vec3::new(1.0, 2.0, 3.0),
+                        Vec3::new(-1.0, -2.0, -3.0),
+                        Vec3::new(2.0, 3.0, 4.0),
+                    ],
+                    Vec3::new(0.0, 0.0, 0.0),
+                )
+            ]
+        );
 
-        let aabb = AABB::new(&mesh);
+        let aabb = AABB::from_mesh(&mesh);
         assert_eq!(aabb.lower, Vec3::new(-1.0, -2.0, -3.0));
         assert_eq!(aabb.upper, Vec3::new(2.0, 3.0, 4.0));
     }
 
     #[test]
     fn test_center() {
-        let mut mesh = Mesh::new();
-        mesh.push(Triangle::new(
-            [
-                Vec3::new(1.0, 2.0, 3.0),
-                Vec3::new(-1.0, -2.0, -3.0),
-                Vec3::new(2.0, 3.0, 4.0),
-            ],
-            Vec3::new(0.0, 0.0, 0.0),
-        ));
+        let mut mesh = Mesh::new(
+            vec![
+                Triangle::new(
+                    [
+                        Vec3::new(1.0, 2.0, 3.0),
+                        Vec3::new(-1.0, -2.0, -3.0),
+                        Vec3::new(2.0, 3.0, 4.0),
+                    ],
+                    Vec3::new(0.0, 0.0, 0.0),
+                )
+            ]
+        );
 
-        let aabb = AABB::new(&mesh);
+        let aabb = AABB::from_mesh(&mesh);
         assert_eq!(aabb.center(), Vec3::new(0.5, 0.5, 0.5));
     }
 }

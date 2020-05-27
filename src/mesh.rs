@@ -87,7 +87,7 @@ impl<'a, T: Read + Seek> IntoIterator for &'a LazyMesh<T> {
     type IntoIter = LazyMeshIter<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.parser.borrow_mut().rewind();
+        self.parser.borrow_mut().rewind().unwrap();
         Self::IntoIter {
             parser: &self.parser,
         }
