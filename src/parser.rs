@@ -28,18 +28,18 @@ impl<T: Read + Seek> Parser<T> {
         let mut reader = BufReader::new(inner);
 
         let stl_type = deduce_stl_type(&mut reader)?;
-        reader.seek(io::SeekFrom::Start(0))?;
+        reader.seek(SeekFrom::Start(0))?;
 
         // figure out header size
         let mut header_length = 0;
         match stl_type {
             StlType::Binary => {
-                header_length = HEADER_SIZE;
+                header_length = HEADER_SIZE + 4; // header size + triangle count (u32)
             }
             StlType::Ascii => {
                 while let Some(line) = read_ascii_line(&mut reader).ok() {
                     if line.starts_with("solid") {
-                        header_length = reader.seek(io::SeekFrom::Current(0))? as u64;
+                        header_length = reader.seek(SeekFrom::Current(0))? as u64;
                         break;
                     }
                 }
@@ -54,8 +54,7 @@ impl<T: Read + Seek> Parser<T> {
     }
 
     pub fn rewind(&mut self) -> Result<()> {
-        self.reader
-            .seek(std::io::SeekFrom::Start(self.header_length))?;
+        self.reader.seek(SeekFrom::Start(self.header_length))?;
         Ok(())
     }
 
@@ -73,9 +72,9 @@ impl<T: Read + Seek> Parser<T> {
             StlType::Binary => {
                 // for binary files we can quickly read the first u32
                 // after the header which contains the triangle count
-                self.rewind()?;
+                self.reader.seek(SeekFrom::Current(-2))?;
                 let count = self.reader.read_u32::<LittleEndian>()? as u64;
-                return Ok(count);
+                Ok(count)
             }
             StlType::Ascii => {
                 // we have no other choice as parsing the hole file
@@ -83,7 +82,7 @@ impl<T: Read + Seek> Parser<T> {
                 while let Some(_) = self.next_triangle() {
                     count += 1;
                 }
-                return Ok(count);
+                Ok(count)
             }
         }
     }
@@ -103,11 +102,7 @@ impl<T: Read + Seek> Parser<T> {
 impl Parser<fs::File> {
     pub fn from_file(filename: &str) -> Result<Self> {
         let file = fs::File::open(filename)?;
-        (&file).seek(std::io::SeekFrom::Start(0))?;
-        // let mut reader = BufReader::new(file);
-        //Self::from_buf(Box::new(file))
-        // let stl_type = deduce_stl_type(&mut reader)?;
-        // reader.seek(std::io::SeekFrom::Start(0))?;
+        (&file).seek(SeekFrom::Start(0))?;
 
         Self::from_buf(file)
     }
@@ -127,7 +122,7 @@ pub fn parse<T: io::BufRead + io::Seek>(reader: &mut T) -> Result<Mesh> {
     match file_type {
         StlType::Binary => {
             // skip header
-            reader.seek(std::io::SeekFrom::Start(HEADER_SIZE))?;
+            reader.seek(SeekFrom::Start(HEADER_SIZE))?;
 
             // get the vertex count
             let vertex_count = reader.read_u32::<LittleEndian>()?;
@@ -144,7 +139,7 @@ pub fn parse<T: io::BufRead + io::Seek>(reader: &mut T) -> Result<Mesh> {
         }
 
         StlType::Ascii => {
-            reader.seek(std::io::SeekFrom::Start(0))?;
+            reader.seek(SeekFrom::Start(0))?;
 
             read_ascii_line(reader)?; // solid ...
 
@@ -159,12 +154,12 @@ pub fn parse<T: io::BufRead + io::Seek>(reader: &mut T) -> Result<Mesh> {
 
 fn deduce_stl_type<T: io::BufRead + io::Seek>(reader: &mut T) -> Result<StlType> {
     // skip header
-    reader.seek(std::io::SeekFrom::Start(HEADER_SIZE))?;
+    reader.seek(SeekFrom::Start(HEADER_SIZE))?;
 
     // the best way to distinguish between 'ascii' and 'bin' files is to check whether the
     // specified triangle count matches the size of the file
     let triangles = reader.read_u32::<LittleEndian>()? as u64;
-    let filesize = reader.seek(std::io::SeekFrom::End(0))?;
+    let filesize = reader.seek(SeekFrom::End(0))?;
     if triangles * TRIANGLE_SIZE + HEADER_SIZE + std::mem::size_of::<u32>() as u64 == filesize {
         return Ok(StlType::Binary);
     }
@@ -231,6 +226,8 @@ fn read_triangle<T: io::Read>(reader: &mut T) -> Result<Triangle> {
     let v2 = read_vec3(reader)?;
     let v3 = read_vec3(reader)?;
 
+    reader.read_u16::<LittleEndian>()?; // attributes
+
     // calculate normal from vertices using right hand rule is case it is missing
     if n == Vec3::new(0.0, 0.0, 0.0) || n == Vec3::new(std::f32::NAN, std::f32::NAN, std::f32::NAN)
     {
@@ -292,12 +289,13 @@ mod test {
     #[test]
     fn mesh_lazy_ascii() {
         let reader = Cursor::new(TRI_ASCII);
-        let parser = Parser::from_buf(reader).unwrap();
+        let mut parser = Parser::from_buf(reader).unwrap();
+
+        assert_eq!(parser.triangle_count().unwrap(), 2);
+
         let lazy_mesh = LazyMesh::new(parser);
 
         let triangles = (&lazy_mesh).into_iter().collect::<Vec<Triangle>>();
-
-        assert_eq!(triangles.len(), 2);
         assert_eq!(
             triangles[0],
             Triangle {
@@ -316,6 +314,29 @@ mod test {
                     Vec3::new(-1.0, -1.0, 1.0),
                     Vec3::new(1.0, -1.0, 1.0),
                     Vec3::new(0.0, 1.0, 1.0)
+                ],
+                normal: Vec3::new(0.0, 0.0, 1.0),
+            }
+        );
+    }
+
+    #[test]
+    fn mesh_lazy_bin() {
+        let reader = Cursor::new(TRI_BIN);
+        let mut parser = Parser::from_buf(reader).unwrap();
+
+        assert_eq!(parser.triangle_count().unwrap(), 1);
+
+        let lazy_mesh = LazyMesh::new(parser);
+
+        let triangles = (&lazy_mesh).into_iter().collect::<Vec<Triangle>>();
+        assert_eq!(
+            triangles[0],
+            Triangle {
+                vertices: [
+                    Vec3::new(-1.0, -1.0, 0.0),
+                    Vec3::new(1.0, -1.0, 0.0),
+                    Vec3::new(0.0, 1.0, 0.0)
                 ],
                 normal: Vec3::new(0.0, 0.0, 1.0),
             }

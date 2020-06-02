@@ -57,7 +57,7 @@ impl RasterBackend {
         &proj * &view
     }
 
-    pub fn fit_mesh_scale(&self, mesh: &Mesh) -> f32 {
+    pub fn fit_mesh_scale(&self, mesh: impl IntoIterator<Item = Triangle> + Copy) -> f32 {
         let aabb = AABB::from_iterable(mesh);
         let vp = self.view_projection(1.0);
 
@@ -65,7 +65,11 @@ impl RasterBackend {
         scale_for_unitsize(&vp, &aabb)
     }
 
-    pub fn render(&self, mesh: &Mesh, model_scale: f32) -> Picture {
+    pub fn render(
+        &self,
+        mesh: impl IntoIterator<Item = Triangle> + Copy,
+        model_scale: f32,
+    ) -> Picture {
         let mut pic = Picture::new(self.width, self.height);
         let mut zbuf = ZBuffer::new(self.width, self.height);
         let mut aabb = AABB::from_iterable(mesh);

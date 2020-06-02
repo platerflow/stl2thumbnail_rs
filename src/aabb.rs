@@ -49,18 +49,14 @@ mod tests {
 
     #[test]
     fn test_bounds() {
-        let mut mesh = Mesh::new(
-            vec![
-                Triangle::new(
-                    [
-                        Vec3::new(1.0, 2.0, 3.0),
-                        Vec3::new(-1.0, -2.0, -3.0),
-                        Vec3::new(2.0, 3.0, 4.0),
-                    ],
-                    Vec3::new(0.0, 0.0, 0.0),
-                )
-            ]
-        );
+        let mut mesh = Mesh::new(vec![Triangle::new(
+            [
+                Vec3::new(1.0, 2.0, 3.0),
+                Vec3::new(-1.0, -2.0, -3.0),
+                Vec3::new(2.0, 3.0, 4.0),
+            ],
+            Vec3::new(0.0, 0.0, 0.0),
+        )]);
 
         let aabb = AABB::from_mesh(&mesh);
         assert_eq!(aabb.lower, Vec3::new(-1.0, -2.0, -3.0));
@@ -69,18 +65,14 @@ mod tests {
 
     #[test]
     fn test_center() {
-        let mut mesh = Mesh::new(
-            vec![
-                Triangle::new(
-                    [
-                        Vec3::new(1.0, 2.0, 3.0),
-                        Vec3::new(-1.0, -2.0, -3.0),
-                        Vec3::new(2.0, 3.0, 4.0),
-                    ],
-                    Vec3::new(0.0, 0.0, 0.0),
-                )
-            ]
-        );
+        let mut mesh = Mesh::new(vec![Triangle::new(
+            [
+                Vec3::new(1.0, 2.0, 3.0),
+                Vec3::new(-1.0, -2.0, -3.0),
+                Vec3::new(2.0, 3.0, 4.0),
+            ],
+            Vec3::new(0.0, 0.0, 0.0),
+        )]);
 
         let aabb = AABB::from_mesh(&mesh);
         assert_eq!(aabb.center(), Vec3::new(0.5, 0.5, 0.5));

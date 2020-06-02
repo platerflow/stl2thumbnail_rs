@@ -55,14 +55,15 @@ fn main() -> Result<(), Box<dyn Error>> {
     let input = matches.value_of("INPUT").unwrap();
     let output = matches.value_of("OUTPUT").unwrap();
 
-    let parsed_mesh = parser::parse_file(&input)?;
+    let parser = Parser::from_file(&input)?;
+    let parsed_mesh = LazyMesh::new(parser); //parser::parse_file(&input)?;
     let verbose = matches.occurrences_of("VERBOSE") > 0;
 
     if verbose {
         println!("Input     \"{}\"", input);
         println!("Output    \"{}\"", output);
-        println!("Triangles {}", parsed_mesh.len());
-        println!("Vertices  {}", parsed_mesh.len() * 3);
+        // println!("Triangles {}", parsed_mesh.len());
+        // println!("Vertices  {}", parsed_mesh.len() * 3);
     }
 
     if matches.occurrences_of("TURNTABLE") > 0 {
@@ -74,21 +75,25 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn create_still(mesh: &Mesh, elevation_angle: f32, path: &str) -> Result<(), std::io::Error> {
+fn create_still(
+    mesh: impl IntoIterator<Item = Triangle> + Copy,
+    elevation_angle: f32,
+    path: &str,
+) -> Result<(), std::io::Error> {
     let elevation_angle = elevation_angle * std::f32::consts::PI / 180.0;
     let mut backend = RasterBackend::new(256, 256);
 
     backend.view_pos = Vec3::new(1.0, 1.0, -elevation_angle.tan());
-    let scale = backend.fit_mesh_scale(&mesh);
+    let scale = backend.fit_mesh_scale(mesh);
     backend.zoom = 1.05;
 
-    backend.render(&mesh, scale).save(path)?;
+    backend.render(mesh, scale).save(path)?;
 
     Ok(())
 }
 
 fn create_turntable_animation(
-    mesh: &Mesh,
+    mesh: impl IntoIterator<Item = Triangle> + Copy,
     elevation_angle: f32,
     path: &str,
 ) -> Result<(), std::io::Error> {
@@ -98,13 +103,13 @@ fn create_turntable_animation(
     let mut pictures: Vec<Picture> = Vec::new();
 
     backend.view_pos = Vec3::new(1.0, 1.0, -elevation_angle.tan());
-    let scale = backend.fit_mesh_scale(&mesh);
+    let scale = backend.fit_mesh_scale(mesh);
     backend.zoom = 1.05;
 
     for i in 0..45 {
         let angle = 8.0 * i as f32 * std::f32::consts::PI / 180.0;
         backend.view_pos = Vec3::new(angle.cos(), angle.sin(), -elevation_angle.tan());
-        pictures.push(backend.render(&mesh, scale));
+        pictures.push(backend.render(mesh, scale));
     }
 
     encode_gif(path, pictures.as_slice())?;
