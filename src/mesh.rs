@@ -2,6 +2,7 @@ use crate::parser::Parser;
 use std::cell::{Cell, RefCell};
 use std::io::{Read, Seek};
 use std::rc::Rc;
+use std::ops::Index;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Triangle {
@@ -21,6 +22,19 @@ pub struct Mesh(Vec<Triangle>);
 impl Mesh {
     pub fn new(data: Vec<Triangle>) -> Self {
         Self { 0: data }
+    }
+}
+
+impl Mesh {
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+}
+
+impl Index<usize> for Mesh {
+    type Output = Triangle;
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
     }
 }
 
