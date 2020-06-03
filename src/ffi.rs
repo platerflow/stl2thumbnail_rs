@@ -2,7 +2,7 @@ use std::ffi::CStr;
 use std::mem::forget;
 use std::os::raw::c_char;
 
-use crate::parser::parse_file;
+use crate::parser::Parser;
 use crate::rasterbackend::RasterBackend;
 
 #[repr(C)]
@@ -20,7 +20,8 @@ pub extern "C" fn render(path: *const c_char, width: usize, height: usize) -> Pi
     let path = unsafe { CStr::from_ptr(path).to_str().unwrap() };
 
     let backend = RasterBackend::new(width, height);
-    let mesh = parse_file(path);
+    let mut parser = Parser::from_file(path).unwrap();
+    let mesh = parser.read_all();
 
     if let Ok(mesh) = mesh {
         let scale = backend.fit_mesh_scale(&mesh);
