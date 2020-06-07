@@ -31,7 +31,7 @@ impl From<(f32, f32, f32, f32)> for RGBA {
     }
 }
 
-impl From<(&str)> for RGBA {
+impl From<&str> for RGBA {
     fn from(rgba: &str) -> Self {
         assert_eq!(rgba.len(), 8);
 
