@@ -20,7 +20,7 @@ pub extern "C" fn render(path: *const c_char, width: usize, height: usize) -> Pi
     let path = unsafe { CStr::from_ptr(path).to_str().unwrap() };
 
     let backend = RasterBackend::new(width, height);
-    let mut parser = Parser::from_file(path).unwrap();
+    let mut parser = Parser::from_file(path, true).unwrap();
     let mesh = parser.read_all();
 
     if let Ok(mesh) = mesh {

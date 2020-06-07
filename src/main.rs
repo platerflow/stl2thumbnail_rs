@@ -50,26 +50,60 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .long("verbose")
                 .help("Be verbose"),
         )
+        .arg(
+            Arg::with_name("LAZY")
+                .short("l")
+                .long("lazy")
+                .help("Be lazy (low memory mode)"),
+        )
+        .arg(
+            Arg::with_name("RECALC_NORMALS")
+                .short("n")
+                .long("normals")
+                .help("Always recalculate normals"),
+        )
         .get_matches();
 
     let input = matches.value_of("INPUT").unwrap();
     let output = matches.value_of("OUTPUT").unwrap();
-
-    let parser = Parser::from_file(&input)?;
-    let parsed_mesh = LazyMesh::new(parser); //parser::parse_file(&input)?;
     let verbose = matches.occurrences_of("VERBOSE") > 0;
+    let lazy = matches.occurrences_of("LAZY") > 0;
+    let recalculate_normals = matches.occurrences_of("RECALC_NORMALS") > 0;
 
-    if verbose {
-        println!("Input     \"{}\"", input);
-        println!("Output    \"{}\"", output);
-        // println!("Triangles {}", parsed_mesh.len());
-        // println!("Vertices  {}", parsed_mesh.len() * 3);
-    }
+    let mut parser = Parser::from_file(&input, recalculate_normals)?;
 
-    if matches.occurrences_of("TURNTABLE") > 0 {
-        create_turntable_animation(&parsed_mesh, 25.0, &output)?;
+    if lazy {
+        let parsed_mesh = LazyMesh::new(parser); //parser::parse_file(&input)?;
+
+        if verbose {
+            println!("Input     \"{}\"", input);
+            println!("Output    \"{}\"", output);
+            println!("Lazy");
+            // println!("Triangles {}", parsed_mesh.len());
+            // println!("Vertices  {}", parsed_mesh.len() * 3);
+        }
+
+        if matches.occurrences_of("TURNTABLE") > 0 {
+            create_turntable_animation(&parsed_mesh, 25.0, &output)?;
+        } else {
+            create_still(&parsed_mesh, 25.0, &output)?;
+        }
     } else {
-        create_still(&parsed_mesh, 25.0, &output)?;
+        let parsed_mesh = parser.read_all().unwrap();
+
+        if verbose {
+            println!("Input     \"{}\"", input);
+            println!("Output    \"{}\"", output);
+            println!("Greedy");
+            // println!("Triangles {}", parsed_mesh.len());
+            // println!("Vertices  {}", parsed_mesh.len() * 3);
+        }
+
+        if matches.occurrences_of("TURNTABLE") > 0 {
+            create_turntable_animation(&parsed_mesh, 25.0, &output)?;
+        } else {
+            create_still(&parsed_mesh, 25.0, &output)?;
+        }
     }
 
     Ok(())

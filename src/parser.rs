@@ -21,10 +21,11 @@ where
     reader: BufReader<T>,
     stl_type: StlType,
     header_length: u64,
+    recalculate_normals: bool,
 }
 
 impl<T: Read + Seek> Parser<T> {
-    pub fn from_buf(inner: T) -> Result<Self> {
+    pub fn from_buf(inner: T, recalculate_normals: bool) -> Result<Self> {
         let mut reader = BufReader::new(inner);
 
         let stl_type = deduce_stl_type(&mut reader)?;
@@ -50,6 +51,7 @@ impl<T: Read + Seek> Parser<T> {
             reader,
             stl_type,
             header_length,
+            recalculate_normals,
         })
     }
 
@@ -59,10 +61,20 @@ impl<T: Read + Seek> Parser<T> {
     }
 
     pub fn next_triangle(&mut self) -> Option<Triangle> {
-        match self.stl_type {
+        let mut triangle = match self.stl_type {
             StlType::Ascii => read_ascii_triangle(&mut self.reader).ok(),
             StlType::Binary => read_triangle(&mut self.reader).ok(),
+        };
+
+        // calculate normal from vertices using right hand rule is case it is missing
+        if let Some(triangle) = &mut triangle {
+            if self.recalculate_normals || triangle.normal == Vec3::new(0.0, 0.0, 0.0) || triangle.normal == Vec3::new(std::f32::NAN, std::f32::NAN, std::f32::NAN)
+            {
+                triangle.normal = (&triangle.vertices[1] - &triangle.vertices[0]).cross(&(&triangle.vertices[2] - &triangle.vertices[0])).normalize();
+            }
         }
+
+        triangle
     }
 
     pub fn triangle_count(&mut self) -> Result<u64> {
@@ -100,11 +112,11 @@ impl<T: Read + Seek> Parser<T> {
 }
 
 impl Parser<fs::File> {
-    pub fn from_file(filename: &str) -> Result<Self> {
+    pub fn from_file(filename: &str, recalculate_normals: bool) -> Result<Self> {
         let file = fs::File::open(filename)?;
         (&file).seek(SeekFrom::Start(0))?;
 
-        Self::from_buf(file)
+        Self::from_buf(file, recalculate_normals)
     }
 }
 
@@ -167,13 +179,13 @@ fn read_ascii_triangle<T: io::BufRead>(reader: &mut T) -> Result<Triangle> {
 }
 
 fn read_vec3<T: io::Read>(reader: &mut T) -> Result<Vec3> {
-    let mut v = [0.0; 3];
-
-    v[0] = reader.read_f32::<LittleEndian>()?;
-    v[1] = reader.read_f32::<LittleEndian>()?;
-    v[2] = reader.read_f32::<LittleEndian>()?;
-
-    Ok(Vec3::new(v[0], v[1], v[2]))
+    Ok(
+        Vec3::new(
+            reader.read_f32::<LittleEndian>()?,
+            reader.read_f32::<LittleEndian>()?,
+            reader.read_f32::<LittleEndian>()?,
+        )
+    )
 }
 
 fn read_triangle<T: io::Read>(reader: &mut T) -> Result<Triangle> {
@@ -183,12 +195,6 @@ fn read_triangle<T: io::Read>(reader: &mut T) -> Result<Triangle> {
     let v3 = read_vec3(reader)?;
 
     reader.read_u16::<LittleEndian>()?; // attributes
-
-    // calculate normal from vertices using right hand rule is case it is missing
-    if n == Vec3::new(0.0, 0.0, 0.0) || n == Vec3::new(std::f32::NAN, std::f32::NAN, std::f32::NAN)
-    {
-        n = (v2 - v1).cross(&(v3 - v1)).normalize();
-    }
 
     Ok(Triangle::new([v1, v2, v3], n))
 }
@@ -206,7 +212,7 @@ mod test {
     #[test]
     fn parser_ascii_test() {
         let mut reader = Cursor::new(TRI_ASCII);
-        let mut parser = Parser::from_buf(reader).unwrap();
+        let mut parser = Parser::from_buf(reader, false).unwrap();
         let triangles = parser.read_all().unwrap();
 
         assert_eq!(triangles[0].normal, Vec3::new(0.0, 0.0, 1.0));
@@ -218,7 +224,7 @@ mod test {
     #[test]
     fn parser_ascii_broken_test() {
         let mut reader = Cursor::new(TRI_ASCII_BROKEN);
-        let mut parser = Parser::from_buf(reader).unwrap();
+        let mut parser = Parser::from_buf(reader, false).unwrap();
         let triangles = parser.read_all().unwrap();
 
         assert_eq!(triangles.len(), 0);
@@ -227,7 +233,7 @@ mod test {
     #[test]
     fn parser_bin_test() {
         let mut reader = Cursor::new(TRI_BIN);
-        let mut parser = Parser::from_buf(reader).unwrap();
+        let mut parser = Parser::from_buf(reader, false).unwrap();
         let mesh = parser.read_all().unwrap();
 
         assert_eq!(mesh[0].normal, Vec3::new(0.0, 0.0, 1.0));
@@ -239,7 +245,7 @@ mod test {
     #[test]
     fn mesh_lazy_ascii() {
         let reader = Cursor::new(TRI_ASCII);
-        let mut parser = Parser::from_buf(reader).unwrap();
+        let mut parser = Parser::from_buf(reader, false).unwrap();
 
         assert_eq!(parser.triangle_count().unwrap(), 2);
 
@@ -273,7 +279,7 @@ mod test {
     #[test]
     fn mesh_lazy_bin() {
         let reader = Cursor::new(TRI_BIN);
-        let mut parser = Parser::from_buf(reader).unwrap();
+        let mut parser = Parser::from_buf(reader, false).unwrap();
 
         assert_eq!(parser.triangle_count().unwrap(), 1);
 

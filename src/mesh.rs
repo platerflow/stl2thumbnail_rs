@@ -1,8 +1,8 @@
 use crate::parser::Parser;
 use std::cell::{Cell, RefCell};
 use std::io::{Read, Seek};
-use std::rc::Rc;
 use std::ops::Index;
+use std::rc::Rc;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Triangle {
