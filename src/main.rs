@@ -73,14 +73,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut parser = Parser::from_file(&input, recalculate_normals)?;
 
     if lazy {
-        let parsed_mesh = LazyMesh::new(parser); //parser::parse_file(&input)?;
+        let parsed_mesh = LazyMesh::new(parser);
 
         if verbose {
-            println!("Input     \"{}\"", input);
-            println!("Output    \"{}\"", output);
-            println!("Lazy");
-            // println!("Triangles {}", parsed_mesh.len());
-            // println!("Vertices  {}", parsed_mesh.len() * 3);
+            println!("Input                 '{}'", input);
+            println!("Output                '{}'", output);
+            println!("Recalculate normals   '{}'", recalculate_normals);
+            println!("Mode                  'Lazy'");
         }
 
         if matches.occurrences_of("TURNTABLE") > 0 {
@@ -89,14 +88,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             create_still(&parsed_mesh, 25.0, &output)?;
         }
     } else {
-        let parsed_mesh = parser.read_all().unwrap();
+        let parsed_mesh = parser.read_all()?;
 
         if verbose {
-            println!("Input     \"{}\"", input);
-            println!("Output    \"{}\"", output);
-            println!("Greedy");
-            // println!("Triangles {}", parsed_mesh.len());
-            // println!("Vertices  {}", parsed_mesh.len() * 3);
+            println!("Input                 '{}'", input);
+            println!("Output                '{}'", output);
+            println!("Recalculate normals   '{}'", recalculate_normals);
+            println!("Mode                  'Greedy'");
         }
 
         if matches.occurrences_of("TURNTABLE") > 0 {
