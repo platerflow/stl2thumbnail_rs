@@ -68,9 +68,13 @@ impl<T: Read + Seek> Parser<T> {
 
         // calculate normal from vertices using right hand rule is case it is missing
         if let Some(triangle) = &mut triangle {
-            if self.recalculate_normals || triangle.normal == Vec3::new(0.0, 0.0, 0.0) || triangle.normal == Vec3::new(std::f32::NAN, std::f32::NAN, std::f32::NAN)
+            if self.recalculate_normals
+                || triangle.normal == Vec3::new(0.0, 0.0, 0.0)
+                || triangle.normal == Vec3::new(std::f32::NAN, std::f32::NAN, std::f32::NAN)
             {
-                triangle.normal = (&triangle.vertices[1] - &triangle.vertices[0]).cross(&(&triangle.vertices[2] - &triangle.vertices[0])).normalize();
+                triangle.normal = (&triangle.vertices[1] - &triangle.vertices[0])
+                    .cross(&(&triangle.vertices[2] - &triangle.vertices[0]))
+                    .normalize();
             }
         }
 
@@ -179,13 +183,11 @@ fn read_ascii_triangle<T: io::BufRead>(reader: &mut T) -> Result<Triangle> {
 }
 
 fn read_vec3<T: io::Read>(reader: &mut T) -> Result<Vec3> {
-    Ok(
-        Vec3::new(
-            reader.read_f32::<LittleEndian>()?,
-            reader.read_f32::<LittleEndian>()?,
-            reader.read_f32::<LittleEndian>()?,
-        )
-    )
+    Ok(Vec3::new(
+        reader.read_f32::<LittleEndian>()?,
+        reader.read_f32::<LittleEndian>()?,
+        reader.read_f32::<LittleEndian>()?,
+    ))
 }
 
 fn read_triangle<T: io::Read>(reader: &mut T) -> Result<Triangle> {
