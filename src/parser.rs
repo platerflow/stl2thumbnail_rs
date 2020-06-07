@@ -124,7 +124,7 @@ impl Parser<fs::File> {
     }
 }
 
-fn deduce_stl_type<T: io::BufRead + io::Seek>(reader: &mut T) -> Result<StlType> {
+fn deduce_stl_type<T: BufRead + io::Seek>(reader: &mut T) -> Result<StlType> {
     // skip header
     reader.seek(SeekFrom::Start(HEADER_SIZE))?;
 
@@ -140,13 +140,13 @@ fn deduce_stl_type<T: io::BufRead + io::Seek>(reader: &mut T) -> Result<StlType>
     Ok(StlType::Ascii)
 }
 
-fn read_ascii_line<T: io::BufRead>(reader: &mut T) -> Result<String> {
+fn read_ascii_line<T: BufRead>(reader: &mut T) -> Result<String> {
     let mut line = String::new();
     reader.read_line(&mut line)?;
     Ok(line.trim_start().to_ascii_lowercase())
 }
 
-fn read_ascii_triangle<T: io::BufRead>(reader: &mut T) -> Result<Triangle> {
+fn read_ascii_triangle<T: BufRead>(reader: &mut T) -> Result<Triangle> {
     let mut vertices = [
         Vec3::new(0.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 0.0),
@@ -191,7 +191,7 @@ fn read_vec3<T: io::Read>(reader: &mut T) -> Result<Vec3> {
 }
 
 fn read_triangle<T: io::Read>(reader: &mut T) -> Result<Triangle> {
-    let mut n = read_vec3(reader)?;
+    let n = read_vec3(reader)?;
     let v1 = read_vec3(reader)?;
     let v2 = read_vec3(reader)?;
     let v3 = read_vec3(reader)?;
@@ -204,8 +204,8 @@ fn read_triangle<T: io::Read>(reader: &mut T) -> Result<Triangle> {
 #[cfg(test)]
 mod test {
     use crate::mesh::*;
-    use crate::parser::{parse, Parser};
-    use std::io::{Cursor, Read, Seek};
+    use crate::parser::Parser;
+    use std::io::Cursor;
 
     const TRI_BIN: &'static [u8] = include_bytes!("test_models/triangle.stl");
     const TRI_ASCII: &'static [u8] = include_bytes!("test_models/triangle_ascii.stl");
@@ -213,7 +213,7 @@ mod test {
 
     #[test]
     fn parser_ascii_test() {
-        let mut reader = Cursor::new(TRI_ASCII);
+        let reader = Cursor::new(TRI_ASCII);
         let mut parser = Parser::from_buf(reader, false).unwrap();
         let triangles = parser.read_all().unwrap();
 
@@ -225,7 +225,7 @@ mod test {
 
     #[test]
     fn parser_ascii_broken_test() {
-        let mut reader = Cursor::new(TRI_ASCII_BROKEN);
+        let reader = Cursor::new(TRI_ASCII_BROKEN);
         let mut parser = Parser::from_buf(reader, false).unwrap();
         let triangles = parser.read_all().unwrap();
 
@@ -234,7 +234,7 @@ mod test {
 
     #[test]
     fn parser_bin_test() {
-        let mut reader = Cursor::new(TRI_BIN);
+        let reader = Cursor::new(TRI_BIN);
         let mut parser = Parser::from_buf(reader, false).unwrap();
         let mesh = parser.read_all().unwrap();
 
@@ -299,19 +299,5 @@ mod test {
                 normal: Vec3::new(0.0, 0.0, 1.0),
             }
         );
-    }
-
-    fn some_function(m: impl IntoIterator<Item = Triangle> + Copy) {
-        for tri in m {}
-
-        for tri in m {}
-        //some_function(&mut m)
-        some_other_function(m);
-    }
-
-    fn some_other_function(m: impl IntoIterator<Item = Triangle> + Copy) {
-        for tri in m {
-            println!("{:?}", tri);
-        }
     }
 }

@@ -49,7 +49,7 @@ mod tests {
 
     #[test]
     fn test_bounds() {
-        let mut mesh = Mesh::new(vec![Triangle::new(
+        let mesh = Mesh::new(vec![Triangle::new(
             [
                 Vec3::new(1.0, 2.0, 3.0),
                 Vec3::new(-1.0, -2.0, -3.0),
@@ -65,7 +65,7 @@ mod tests {
 
     #[test]
     fn test_center() {
-        let mut mesh = Mesh::new(vec![Triangle::new(
+        let mesh = Mesh::new(vec![Triangle::new(
             [
                 Vec3::new(1.0, 2.0, 3.0),
                 Vec3::new(-1.0, -2.0, -3.0),
