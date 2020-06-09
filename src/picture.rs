@@ -1,6 +1,8 @@
 use std::convert::From;
 use std::i32;
 
+use crate::mesh::Vec4;
+
 #[derive(Debug, PartialEq)]
 pub struct RGBA {
     pub r: u8,
@@ -40,6 +42,17 @@ impl From<&str> for RGBA {
             g: i32::from_str_radix(&rgba[2..4], 16).unwrap() as u8,
             b: i32::from_str_radix(&rgba[4..6], 16).unwrap() as u8,
             a: i32::from_str_radix(&rgba[6..8], 16).unwrap() as u8,
+        }
+    }
+}
+
+impl From<&Vec4> for RGBA {
+    fn from(vec: &Vec4) -> Self {
+        Self {
+            r: (vec.x.min(1.0).max(0.0) * 255.0) as u8,
+            g: (vec.y.min(1.0).max(0.0) * 255.0) as u8,
+            b: (vec.z.min(1.0).max(0.0) * 255.0) as u8,
+            a: (vec.w.min(1.0).max(0.0) * 255.0) as u8,
         }
     }
 }

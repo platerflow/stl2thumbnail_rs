@@ -69,6 +69,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let verbose = matches.occurrences_of("VERBOSE") > 0;
     let lazy = matches.occurrences_of("LAZY") > 0;
     let recalculate_normals = matches.occurrences_of("RECALC_NORMALS") > 0;
+    let turntable = matches.occurrences_of("TURNTABLE") > 0;
 
     let mut parser = Parser::from_file(&input, recalculate_normals)?;
 
@@ -79,14 +80,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Input                 '{}'", input);
             println!("Output                '{}'", output);
             println!("Recalculate normals   '{}'", recalculate_normals);
-            println!("Mode                  'Lazy'");
+            println!("Low memory mode       '{}'", lazy);
         }
 
-        if matches.occurrences_of("TURNTABLE") > 0 {
-            create_turntable_animation(&parsed_mesh, 25.0, &output)?;
-        } else {
-            create_still(&parsed_mesh, 25.0, &output)?;
-        }
+        create(&parsed_mesh, 25.0, &output, turntable)?;
     } else {
         let parsed_mesh = parser.read_all()?;
 
@@ -94,17 +91,26 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Input                 '{}'", input);
             println!("Output                '{}'", output);
             println!("Recalculate normals   '{}'", recalculate_normals);
-            println!("Mode                  'Greedy'");
+            println!("Low memory mode       '{}'", lazy);
         }
 
-        if matches.occurrences_of("TURNTABLE") > 0 {
-            create_turntable_animation(&parsed_mesh, 25.0, &output)?;
-        } else {
-            create_still(&parsed_mesh, 25.0, &output)?;
-        }
+        create(&parsed_mesh, 25.0, &output, turntable)?;
     }
 
     Ok(())
+}
+
+fn create(
+    mesh: impl IntoIterator<Item = Triangle> + Copy,
+    elevation_angle: f32,
+    path: &str,
+    turntable: bool,
+) -> Result<(), std::io::Error> {
+    if turntable {
+        create_turntable_animation(mesh, 25.0, path)
+    } else {
+        create_still(mesh, 25.0, path)
+    }
 }
 
 fn create_still(
@@ -115,9 +121,9 @@ fn create_still(
     let elevation_angle = elevation_angle * std::f32::consts::PI / 180.0;
     let mut backend = RasterBackend::new(256, 256);
 
-    backend.view_pos = Vec3::new(1.0, 1.0, -elevation_angle.tan());
+    backend.render_options.view_pos = Vec3::new(1.0, 1.0, -elevation_angle.tan());
     let scale = backend.fit_mesh_scale(mesh);
-    backend.zoom = 1.05;
+    backend.render_options.zoom = 1.05;
 
     backend.render(mesh, scale).save(path)?;
 
@@ -131,16 +137,16 @@ fn create_turntable_animation(
 ) -> Result<(), std::io::Error> {
     let elevation_angle = elevation_angle * std::f32::consts::PI / 180.0;
     let mut backend = RasterBackend::new(256, 256);
-    backend.grid_visible = false;
+    backend.render_options.grid_visible = false;
     let mut pictures: Vec<Picture> = Vec::new();
 
-    backend.view_pos = Vec3::new(1.0, 1.0, -elevation_angle.tan());
+    backend.render_options.view_pos = Vec3::new(1.0, 1.0, -elevation_angle.tan());
     let scale = backend.fit_mesh_scale(mesh);
-    backend.zoom = 1.05;
+    backend.render_options.zoom = 1.05;
 
     for i in 0..45 {
         let angle = 8.0 * i as f32 * std::f32::consts::PI / 180.0;
-        backend.view_pos = Vec3::new(angle.cos(), angle.sin(), -elevation_angle.tan());
+        backend.render_options.view_pos = Vec3::new(angle.cos(), angle.sin(), -elevation_angle.tan());
         pictures.push(backend.render(mesh, scale));
     }
 

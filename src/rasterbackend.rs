@@ -6,7 +6,7 @@ use crate::zbuffer::*;
 use std::f32::consts::PI;
 
 #[derive(Debug)]
-pub struct RasterBackend {
+pub struct RenderOptions {
     pub view_pos: Vec3,
     pub light_pos: Vec3,
     pub light_color: Vec3,
@@ -16,13 +16,10 @@ pub struct RasterBackend {
     pub background_color: Vec4,
     pub zoom: f32,
     pub grid_visible: bool,
-    width: usize,
-    height: usize,
-    aspect_ratio: f32,
 }
 
-impl RasterBackend {
-    pub fn new(width: usize, height: usize) -> Self {
+impl Default for RenderOptions {
+    fn default() -> Self {
         Self {
             view_pos: Vec3::new(-1.0, 1.0, -1.0).normalize(),
             light_pos: Vec3::new(-1.0, 1.0, -1.5) * 5.0,
@@ -33,6 +30,22 @@ impl RasterBackend {
             background_color: Vec4::new(1.0, 1.0, 1.0, 1.0),
             grid_visible: true,
             zoom: 1.0,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct RasterBackend {
+    pub render_options: RenderOptions,
+    width: usize,
+    height: usize,
+    aspect_ratio: f32,
+}
+
+impl RasterBackend {
+    pub fn new(width: usize, height: usize) -> Self {
+        Self {
+            render_options: RenderOptions::default(),
             width,
             height,
             aspect_ratio: width as f32 / height as f32,
@@ -50,7 +63,7 @@ impl RasterBackend {
             1.0,
         );
         let view = glm::look_at(
-            &self.view_pos,
+            &self.render_options.view_pos,
             &Vec3::new(0.0, 0.0, 0.0),
             &Vec3::new(0.0, 0.0, -1.0),
         );
@@ -74,17 +87,9 @@ impl RasterBackend {
         let mut zbuf = ZBuffer::new(self.width, self.height);
         let mut aabb = AABB::from_iterable(mesh);
 
-        pic.fill(
-            &(
-                self.background_color.x,
-                self.background_color.y,
-                self.background_color.z,
-                self.background_color.w,
-            )
-                .into(),
-        );
+        pic.fill(&(&self.render_options.background_color).into());
 
-        let vp = self.view_projection(self.zoom);
+        let vp = self.view_projection(self.render_options.zoom);
 
         // calculate transforms taking the new model scale into account
         let model = Mat4::identity()
@@ -96,16 +101,16 @@ impl RasterBackend {
         aabb.apply_transform(&model);
 
         // eye normal pointing towards the camera in world space
-        let eye_normal = self.view_pos.normalize();
+        let eye_normal = self.render_options.view_pos.normalize();
 
         // grid in x and y direction
-        if self.grid_visible {
-            draw_grid(&mut pic, &vp, aabb.lower.z, &self.grid_color);
+        if self.render_options.grid_visible {
+            draw_grid(&mut pic, &vp, aabb.lower.z, &self.render_options.grid_color);
             draw_grid(
                 &mut pic,
                 &(vp * glm::rotation(PI / 2.0, &Vec3::new(0.0, 0.0, 1.0))),
                 aabb.lower.z,
-                &self.grid_color,
+                &self.render_options.grid_color,
             );
         }
 
@@ -185,24 +190,24 @@ impl RasterBackend {
 
                         if zbuf.test_and_set(x, y, frag_pos.z) {
                             // calculate lightning
-                            let light_normal = (&self.light_pos - &fp).normalize(); // normal frag pos to light (world space)
-                            let view_normal = (&self.view_pos - &fp).normalize(); // normal frag pos to view (world space)
+                            let light_normal = (&self.render_options.light_pos - &fp).normalize(); // normal frag pos to light (world space)
+                            let view_normal = (&self.render_options.view_pos - &fp).normalize(); // normal frag pos to view (world space)
                             let reflect_dir = glm::reflect_vec(&-light_normal, &normal);
 
                             // diffuse
                             let diff_color =
-                                glm::dot(&normal, &light_normal).max(0.0) * &self.light_color * 1.0;
+                                glm::dot(&normal, &light_normal).max(0.0) * &self.render_options.light_color * 1.0;
 
                             // specular
                             let spec_color = (glm::dot(&view_normal, &reflect_dir).powf(16.0)
                                 * 0.7)
-                                * &self.light_color;
+                                * &self.render_options.light_color;
 
                             // merge
-                            let mut color = self.ambient_color + diff_color + spec_color;
-                            color.x *= self.model_color.x;
-                            color.y *= self.model_color.y;
-                            color.z *= self.model_color.z;
+                            let mut color = self.render_options.ambient_color + diff_color + spec_color;
+                            color.x *= self.render_options.model_color.x;
+                            color.y *= self.render_options.model_color.y;
+                            color.z *= self.render_options.model_color.z;
 
                             pic.set(x, y, &(color.x, color.y, color.z, 1.0).into());
                         }
@@ -231,8 +236,8 @@ fn scale_for_unitsize(mvp: &Mat4, aabb: &AABB) -> f32 {
         matmul(&mvp, &Vec3::new(aabb.upper.x, aabb.upper.y, aabb.upper.z)),
     ];
 
-    let mut min = Vec3::new(std::f32::MAX, std::f32::MAX, std::f32::MAX);
-    let mut max = Vec3::new(std::f32::MIN, std::f32::MIN, std::f32::MIN);
+    let mut min = Vec3::new(f32::MAX, f32::MAX, f32::MAX);
+    let mut max = Vec3::new(f32::MIN, f32::MIN, f32::MIN);
 
     for e in &edges {
         min.x = min.x.min(e.x);

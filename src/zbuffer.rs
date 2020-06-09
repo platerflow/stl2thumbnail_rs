@@ -7,7 +7,7 @@ pub struct ZBuffer {
 impl ZBuffer {
     pub fn new(width: usize, height: usize) -> Self {
         let mut data = Vec::new();
-        data.resize((width * height) as usize, std::f32::MIN);
+        data.resize((width * height) as usize, f32::MIN);
 
         Self {
             data,
