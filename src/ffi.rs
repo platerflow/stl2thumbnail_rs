@@ -20,20 +20,24 @@ pub extern "C" fn render(path: *const c_char, width: usize, height: usize) -> Pi
     let path = unsafe { CStr::from_ptr(path).to_str().unwrap() };
 
     let backend = RasterBackend::new(width, height);
-    let mut parser = Parser::from_file(path, true).unwrap();
-    let mesh = parser.read_all();
+    let parser = Parser::from_file(path, true);
 
-    if let Ok(mesh) = mesh {
-        let scale = backend.fit_mesh_scale(&mesh);
-        let mut pic = backend.render(&mesh, scale);
-        let boxed_data = pic.data_as_boxed_slice();
-        let data = boxed_data.as_ptr();
-        let len = pic.data().len();
+    if let Ok(mut parser) = parser {
+        let mesh = parser.read_all();
 
-        // leak the memory owned by boxed_data
-        forget(boxed_data);
+        if let Ok(mesh) = mesh {
+            let scale = backend.fit_mesh_scale(&mesh);
+            let mut pic = backend.render(&mesh, scale);
 
-        return PictureBuffer { data, len };
+            let boxed_data = pic.data_as_boxed_slice();
+            let data = boxed_data.as_ptr();
+            let len = pic.data().len();
+
+            // leak the memory owned by boxed_data
+            forget(boxed_data);
+
+            return PictureBuffer { data, len };
+        }
     }
 
     PictureBuffer {
