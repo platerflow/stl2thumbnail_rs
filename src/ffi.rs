@@ -11,6 +11,8 @@ pub struct PictureBuffer {
     data: *const u8,
     /// length of the buffer
     len: usize,
+    stride: usize,
+    depth: usize,
 }
 
 #[no_mangle]
@@ -32,17 +34,26 @@ pub extern "C" fn render(path: *const c_char, width: usize, height: usize) -> Pi
             let boxed_data = pic.data_as_boxed_slice();
             let data = boxed_data.as_ptr();
             let len = pic.data().len();
+            let stride = pic.stride();
+            let depth = pic.depth();
 
             // leak the memory owned by boxed_data
             forget(boxed_data);
 
-            return PictureBuffer { data, len };
+            return PictureBuffer {
+                data,
+                len,
+                stride,
+                depth,
+            };
         }
     }
 
     PictureBuffer {
         data: std::ptr::null(),
         len: 0,
+        stride: 0,
+        depth: 0,
     }
 }
 

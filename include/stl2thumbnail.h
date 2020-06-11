@@ -8,6 +8,8 @@
 typedef struct PictureBuffer {
     const uint8_t* data;
     size_t len;
+    size_t stride;
+    size_t depth;
 } PictureBuffer;
 
 PictureBuffer render(const char* path, size_t width, size_t height);
