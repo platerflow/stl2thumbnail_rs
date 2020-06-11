@@ -153,24 +153,12 @@ fn read_ascii_triangle<T: BufRead>(reader: &mut T) -> Result<Triangle> {
         Vec3::new(0.0, 0.0, 0.0),
     ];
 
-    let (nx, ny, nz) = scan_fmt!(
-        &read_ascii_line(reader)?,
-        "facet normal {f} {f} {f}",
-        f32,
-        f32,
-        f32
-    )?;
+    let (nx, ny, nz) = scan_fmt!(&read_ascii_line(reader)?, "facet normal {f} {f} {f}", f32, f32, f32)?;
 
     read_ascii_line(reader)?; // "outer loop"
 
     for i in 0..3 {
-        let (vx, vy, vz) = scan_fmt!(
-            &read_ascii_line(reader)?,
-            "vertex {f} {f} {f}",
-            f32,
-            f32,
-            f32
-        )?;
+        let (vx, vy, vz) = scan_fmt!(&read_ascii_line(reader)?, "vertex {f} {f} {f}", f32, f32, f32)?;
         vertices[i].x = vx;
         vertices[i].y = vy;
         vertices[i].z = vz;

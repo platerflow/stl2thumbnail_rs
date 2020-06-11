@@ -44,12 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .long("turntable")
                 .help("Enables turntable mode"),
         )
-        .arg(
-            Arg::with_name("VERBOSE")
-                .short("v")
-                .long("verbose")
-                .help("Be verbose"),
-        )
+        .arg(Arg::with_name("VERBOSE").short("v").long("verbose").help("Be verbose"))
         .arg(
             Arg::with_name("LAZY")
                 .short("l")

@@ -9,11 +9,7 @@ impl ZBuffer {
         let mut data = Vec::new();
         data.resize((width * height) as usize, f32::MIN);
 
-        Self {
-            data,
-            width,
-            height,
-        }
+        Self { data, width, height }
     }
 
     pub fn test_and_set(&mut self, x: usize, y: usize, z: f32) -> bool {

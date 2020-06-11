@@ -78,11 +78,7 @@ impl RasterBackend {
         scale_for_unitsize(&vp, &aabb)
     }
 
-    pub fn render(
-        &self,
-        mesh: impl IntoIterator<Item = Triangle> + Copy,
-        model_scale: f32,
-    ) -> Picture {
+    pub fn render(&self, mesh: impl IntoIterator<Item = Triangle> + Copy, model_scale: f32) -> Picture {
         let mut pic = Picture::new(self.width, self.height);
         let mut zbuf = ZBuffer::new(self.width, self.height);
         let mut aabb = AABB::from_iterable(mesh);
@@ -141,14 +137,8 @@ impl RasterBackend {
             // triangle bounding box in screen space
             let smin_x = 0.max(((min_x + 1.0) / 2.0 * pic.width() as f32) as usize);
             let smin_y = 0.max(((min_y + 1.0) / 2.0 * pic.height() as f32) as usize);
-            let smax_x = 0.max(
-                pic.width()
-                    .min(((max_x + 1.0) / 2.0 * pic.width() as f32) as usize),
-            );
-            let smax_y = 0.max(
-                pic.height()
-                    .min(((max_y + 1.0) / 2.0 * pic.height() as f32) as usize),
-            );
+            let smax_x = 0.max(pic.width().min(((max_x + 1.0) / 2.0 * pic.width() as f32) as usize));
+            let smax_y = 0.max(pic.height().min(((max_y + 1.0) / 2.0 * pic.height() as f32) as usize));
 
             for y in smin_y..=smax_y {
                 for x in smin_x..=smax_x {
@@ -161,9 +151,8 @@ impl RasterBackend {
                     let p1 = v1.xy();
                     let p2 = v2.xy();
 
-                    let inside = edge_fn(&p, &p0, &p1) <= 0.0
-                        && edge_fn(&p, &p1, &p2) <= 0.0
-                        && edge_fn(&p, &p2, &p0) <= 0.0;
+                    let inside =
+                        edge_fn(&p, &p0, &p1) <= 0.0 && edge_fn(&p, &p1, &p2) <= 0.0 && edge_fn(&p, &p2, &p0) <= 0.0;
 
                     if inside {
                         // calculate barycentric coordinates
@@ -199,8 +188,7 @@ impl RasterBackend {
                                 glm::dot(&normal, &light_normal).max(0.0) * &self.render_options.light_color * 1.0;
 
                             // specular
-                            let spec_color = (glm::dot(&view_normal, &reflect_dir).powf(16.0)
-                                * 0.7)
+                            let spec_color = (glm::dot(&view_normal, &reflect_dir).powf(16.0) * 0.7)
                                 * &self.render_options.light_color;
 
                             // merge
