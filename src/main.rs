@@ -102,9 +102,9 @@ fn create(
     turntable: bool,
 ) -> Result<(), std::io::Error> {
     if turntable {
-        create_turntable_animation(mesh, 25.0, path)
+        create_turntable_animation(mesh, elevation_angle, path)
     } else {
-        create_still(mesh, 25.0, path)
+        create_still(mesh, elevation_angle, path)
     }
 }
 
