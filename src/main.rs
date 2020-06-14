@@ -57,6 +57,18 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .long("normals")
                 .help("Always recalculate normals"),
         )
+        .arg(
+            Arg::with_name("WIDTH")
+                .short("w")
+                .long("width")
+                .help("width of the generated image (defaults to 256)"),
+        )
+        .arg(
+            Arg::with_name("HEIGHT")
+                .short("h")
+                .long("height")
+                .help("height of the generated image (defaults to 256)"),
+        )
         .get_matches();
 
     let input = matches.value_of("INPUT").unwrap();
@@ -65,6 +77,16 @@ fn main() -> Result<(), Box<dyn Error>> {
     let lazy = matches.occurrences_of("LAZY") > 0;
     let recalculate_normals = matches.occurrences_of("RECALC_NORMALS") > 0;
     let turntable = matches.occurrences_of("TURNTABLE") > 0;
+    let width = matches
+        .value_of("WIDTH")
+        .unwrap_or("256")
+        .parse::<usize>()
+        .unwrap_or(256);
+    let height = matches
+        .value_of("WIDTH")
+        .unwrap_or("256")
+        .parse::<usize>()
+        .unwrap_or(256);
 
     let mut parser = Parser::from_file(&input, recalculate_normals)?;
 
@@ -78,7 +100,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Low memory mode       '{}'", lazy);
         }
 
-        create(&parsed_mesh, 25.0, &output, turntable)?;
+        create(width, height, &parsed_mesh, 25.0, &output, turntable)?;
     } else {
         let parsed_mesh = parser.read_all()?;
 
@@ -89,32 +111,36 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Low memory mode       '{}'", lazy);
         }
 
-        create(&parsed_mesh, 25.0, &output, turntable)?;
+        create(width, height, &parsed_mesh, 25.0, &output, turntable)?;
     }
 
     Ok(())
 }
 
 fn create(
+    width: usize,
+    height: usize,
     mesh: impl IntoIterator<Item = Triangle> + Copy,
     elevation_angle: f32,
     path: &str,
     turntable: bool,
 ) -> Result<(), std::io::Error> {
     if turntable {
-        create_turntable_animation(mesh, elevation_angle, path)
+        create_turntable_animation(width, height, mesh, elevation_angle, path)
     } else {
-        create_still(mesh, elevation_angle, path)
+        create_still(width, height, mesh, elevation_angle, path)
     }
 }
 
 fn create_still(
+    width: usize,
+    height: usize,
     mesh: impl IntoIterator<Item = Triangle> + Copy,
     elevation_angle: f32,
     path: &str,
 ) -> Result<(), std::io::Error> {
     let elevation_angle = elevation_angle * std::f32::consts::PI / 180.0;
-    let mut backend = RasterBackend::new(256, 256);
+    let mut backend = RasterBackend::new(width, height);
 
     backend.render_options.view_pos = Vec3::new(1.0, 1.0, -elevation_angle.tan());
     let scale = backend.fit_mesh_scale(mesh);
@@ -126,12 +152,14 @@ fn create_still(
 }
 
 fn create_turntable_animation(
+    width: usize,
+    height: usize,
     mesh: impl IntoIterator<Item = Triangle> + Copy,
     elevation_angle: f32,
     path: &str,
 ) -> Result<(), std::io::Error> {
     let elevation_angle = elevation_angle * std::f32::consts::PI / 180.0;
-    let mut backend = RasterBackend::new(256, 256);
+    let mut backend = RasterBackend::new(width, height);
     backend.render_options.grid_visible = false;
     let mut pictures: Vec<Picture> = Vec::new();
 
