@@ -22,8 +22,8 @@ impl Default for RenderOptions {
     fn default() -> Self {
         Self {
             view_pos: Vec3::new(-1.0, 1.0, -1.0).normalize(),
-            light_pos: Vec3::new(-1.0, 1.0, -1.5) * 5.0,
-            light_color: Vec3::new(0.7, 0.7, 0.7),
+            light_pos: Vec3::new(-1.0, 0.5, -0.5),
+            light_color: Vec3::new(0.6, 0.6, 0.6),
             ambient_color: Vec3::new(0.4, 0.4, 0.4),
             model_color: Vec3::new(0.0, 0.45, 1.0),
             grid_color: Vec3::new(0.0, 0.0, 0.0),
