@@ -12,5 +12,5 @@ typedef struct PictureBuffer {
     size_t depth;
 } PictureBuffer;
 
-PictureBuffer render(const char* path, size_t width, size_t height);
-void free_picture_buffer(PictureBuffer buffer);
+PictureBuffer s2t_render(const char* path, size_t width, size_t height);
+void s2t_free_picture_buffer(PictureBuffer buffer);

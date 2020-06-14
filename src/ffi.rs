@@ -18,7 +18,7 @@ pub struct PictureBuffer {
 #[no_mangle]
 /// Renders a mesh to a picture
 /// Free the buffer with free_picture_buffer
-pub extern "C" fn render(path: *const c_char, width: usize, height: usize) -> PictureBuffer {
+pub extern "C" fn s2t_render(path: *const c_char, width: usize, height: usize) -> PictureBuffer {
     let path = unsafe { CStr::from_ptr(path).to_str().unwrap() };
 
     let backend = RasterBackend::new(width, height);
@@ -58,7 +58,7 @@ pub extern "C" fn render(path: *const c_char, width: usize, height: usize) -> Pi
 }
 
 #[no_mangle]
-pub extern "C" fn free_picture_buffer(buffer: PictureBuffer) {
+pub extern "C" fn s2t_free_picture_buffer(buffer: PictureBuffer) {
     unsafe {
         let s = std::slice::from_raw_parts_mut(buffer.data as *mut u8, buffer.len);
 
