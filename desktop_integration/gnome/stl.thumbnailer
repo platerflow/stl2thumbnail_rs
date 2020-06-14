@@ -1,0 +1,4 @@
+[Thumbnailer Entry]
+TryExec=/usr/bin/stl2thumbnail
+Exec=/usr/bin/stl2thumbnail -w %s -h %s -n %i %o
+MimeType=model/stl;application/sla;model/x.stl-ascii;model/x.stl-binary;
