@@ -49,7 +49,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             Arg::with_name("LAZY")
                 .short("l")
                 .long("lazy")
-                .help("Be lazy (low memory mode)"),
+                .help("Enables low memory usage mode"),
         )
         .arg(
             Arg::with_name("RECALC_NORMALS")
@@ -143,10 +143,10 @@ fn create_still(
     let mut backend = RasterBackend::new(width, height);
 
     backend.render_options.view_pos = Vec3::new(1.0, 1.0, -elevation_angle.tan());
-    let scale = backend.fit_mesh_scale(mesh);
+    let (aabb, scale) = backend.fit_mesh_scale(mesh);
     backend.render_options.zoom = 1.05;
 
-    backend.render(mesh, scale).save(path)?;
+    backend.render(mesh, scale, &aabb).save(path)?;
 
     Ok(())
 }
@@ -160,17 +160,17 @@ fn create_turntable_animation(
 ) -> Result<(), std::io::Error> {
     let elevation_angle = elevation_angle * std::f32::consts::PI / 180.0;
     let mut backend = RasterBackend::new(width, height);
-    backend.render_options.grid_visible = false;
+    //backend.render_options.grid_visible = false;
     let mut pictures: Vec<Picture> = Vec::new();
 
     backend.render_options.view_pos = Vec3::new(1.0, 1.0, -elevation_angle.tan());
-    let scale = backend.fit_mesh_scale(mesh);
+    let (aabb, scale) = backend.fit_mesh_scale(mesh);
     backend.render_options.zoom = 1.05;
 
     for i in 0..45 {
         let angle = 8.0 * i as f32 * std::f32::consts::PI / 180.0;
         backend.render_options.view_pos = Vec3::new(angle.cos(), angle.sin(), -elevation_angle.tan());
-        pictures.push(backend.render(mesh, scale));
+        pictures.push(backend.render(mesh, scale, &aabb));
     }
 
     encode_gif(path, pictures.as_slice())?;

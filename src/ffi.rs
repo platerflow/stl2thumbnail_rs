@@ -28,8 +28,8 @@ pub extern "C" fn s2t_render(path: *const c_char, width: usize, height: usize) -
         let mesh = parser.read_all();
 
         if let Ok(mesh) = mesh {
-            let scale = backend.fit_mesh_scale(&mesh);
-            let mut pic = backend.render(&mesh, scale);
+            let (aabb, scale) = backend.fit_mesh_scale(&mesh);
+            let mut pic = backend.render(&mesh, scale, &aabb);
 
             let boxed_data = pic.data_as_boxed_slice();
             let data = boxed_data.as_ptr();

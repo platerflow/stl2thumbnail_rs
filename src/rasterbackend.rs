@@ -70,18 +70,18 @@ impl RasterBackend {
         &proj * &view
     }
 
-    pub fn fit_mesh_scale(&self, mesh: impl IntoIterator<Item = Triangle> + Copy) -> f32 {
+    pub fn fit_mesh_scale(&self, mesh: impl IntoIterator<Item = Triangle> + Copy) -> (AABB, f32) {
         let aabb = AABB::from_iterable(mesh);
         let vp = self.view_projection(1.0);
 
         // scale the model such that is fills the entire canvas
-        scale_for_unitsize(&vp, &aabb)
+        (aabb, scale_for_unitsize(&vp, &aabb))
     }
 
-    pub fn render(&self, mesh: impl IntoIterator<Item = Triangle> + Copy, model_scale: f32) -> Picture {
+    pub fn render(&self, mesh: impl IntoIterator<Item = Triangle> + Copy, model_scale: f32, aabb: &AABB) -> Picture {
         let mut pic = Picture::new(self.width, self.height);
         let mut zbuf = ZBuffer::new(self.width, self.height);
-        let mut aabb = AABB::from_iterable(mesh);
+        let mut scaled_aabb = aabb.clone();
 
         pic.fill(&(&self.render_options.background_color).into());
 
@@ -94,19 +94,28 @@ impl RasterBackend {
         let mvp = &vp * &model;
 
         // let the AABB match the transformed model
-        aabb.apply_transform(&model);
+        scaled_aabb.apply_transform(&model);
 
         // eye normal pointing towards the camera in world space
         let eye_normal = self.render_options.view_pos.normalize();
 
         // grid in x and y direction
         if self.render_options.grid_visible {
-            draw_grid(&mut pic, &vp, aabb.lower.z, &self.render_options.grid_color);
+            draw_grid(
+                &mut pic,
+                &vp,
+                scaled_aabb.lower.z,
+                &self.render_options.grid_color,
+                aabb.size(),
+                model_scale,
+            );
             draw_grid(
                 &mut pic,
                 &(vp * glm::rotation(PI / 2.0, &Vec3::new(0.0, 0.0, 1.0))),
-                aabb.lower.z,
+                scaled_aabb.lower.z,
                 &self.render_options.grid_color,
+                aabb.size(),
+                model_scale,
             );
         }
 
@@ -238,15 +247,19 @@ fn scale_for_unitsize(mvp: &Mat4, aabb: &AABB) -> f32 {
     1.0 / ((f32::abs(max.x - min.x)).max(f32::abs(max.y - min.y)) / 2.0)
 }
 
-fn draw_grid(pic: &mut Picture, vp: &Mat4, z: f32, color: &Vec3) {
+fn draw_grid(pic: &mut Picture, vp: &Mat4, z: f32, color: &Vec3, model_size: Vec3, scale: f32) {
     // draw grid
+    let max_xy = model_size.x.max(model_size.y);
     let grid_color = (color.x, color.y, color.z, 1.0).into();
-    let grid_count = 20;
-    let grid_spacing = 2.0 / grid_count as f32;
+    let grid_size = 10.0; // mm
+    let grid_count = ((max_xy * scale) / scale / grid_size + 1.0) as i32;
+    let grid_spacing = grid_size * scale as f32;
+
+    let ox = grid_count as f32 * grid_spacing / 2.0;
 
     for x in 0..=grid_count {
-        let p0 = Vec3::new(grid_spacing * (x - grid_count / 2) as f32, 1.0, z);
-        let p1 = Vec3::new(p0.x, -1.0, z);
+        let p0 = Vec3::new(grid_spacing * x as f32 - ox, grid_count as f32 * grid_spacing * 0.5, z);
+        let p1 = Vec3::new(p0.x, -grid_count as f32 * grid_spacing * 0.5, z);
 
         // to screen space
         let sp0 = matmul(&vp, &p0).xy();
