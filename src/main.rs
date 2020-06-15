@@ -97,7 +97,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Input                 '{}'", input);
             println!("Output                '{}'", output);
             println!("Recalculate normals   '{}'", recalculate_normals);
-            println!("Low memory mode       '{}'", lazy);
+            println!("Low memory usage mode '{}'", lazy);
         }
 
         create(width, height, &parsed_mesh, 25.0, &output, turntable)?;
@@ -108,7 +108,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Input                 '{}'", input);
             println!("Output                '{}'", output);
             println!("Recalculate normals   '{}'", recalculate_normals);
-            println!("Low memory mode       '{}'", lazy);
+            println!("Low memory usage mode '{}'", lazy);
         }
 
         create(width, height, &parsed_mesh, 25.0, &output, turntable)?;
