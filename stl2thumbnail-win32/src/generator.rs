@@ -23,16 +23,12 @@ use stl2thumbnail::rasterbackend::RasterBackend;
 #[co_class(implements(IThumbnailProvider, IInitializeWithStream))]
 pub struct WinSTLThumbnailGenerator {
     data: RefCell<Vec<u8>>,
-    pic: RefCell<Option<Picture>>,
-    hbmp: RefCell<BITMAP>,
 }
 
 impl WinSTLThumbnailGenerator {
     pub unsafe fn new() -> Box<Self> {
         Self::allocate(
             RefCell::new(Vec::new()),
-            RefCell::new(None),
-            RefCell::new(std::mem::zeroed()),
         )
     }
 }
@@ -59,8 +55,6 @@ impl IThumbnailProvider for WinSTLThumbnailGenerator {
 
             *phbmp = create_hbitmap_from_picture(&pic);
             *pdw_alpha = 0x2; // WTSAT_ARGB
-
-            self.pic.replace(Some(pic));
 
             return NOERROR;
         }
@@ -113,6 +107,7 @@ fn create_hbitmap_from_picture(pic: &Picture) -> HBITMAP {
     let height = pic.height() as i32;
 
     // Windows allocates the memory for this bitmap and copies the 'data' to its own buffer
+    // Important: The image format here is B8G8R8A8
     unsafe { CreateBitmap(width, height, 1, 32, data) }
 }
 
