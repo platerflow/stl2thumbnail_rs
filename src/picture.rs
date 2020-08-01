@@ -102,6 +102,18 @@ impl Picture {
         self.data.as_slice()
     }
 
+    pub fn to_bgra(&self) -> Vec<u8> {
+        let mut bgra = Vec::<u8>::with_capacity(self.data.len());
+        for i in (0..self.data.len()).step_by(4) {
+            bgra.push(self.data[i+2]);
+            bgra.push(self.data[i+1]);
+            bgra.push(self.data[i+0]);
+            bgra.push(self.data[i+3]);
+        }
+
+        bgra
+    }
+
     pub fn data_as_boxed_slice(&mut self) -> Box<[u8]> {
         self.data.clone().into_boxed_slice()
     }

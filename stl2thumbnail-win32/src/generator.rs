@@ -102,7 +102,8 @@ impl IInitializeWithStream for WinSTLThumbnailGenerator {
 }
 
 fn create_hbitmap_from_picture(pic: &Picture) -> HBITMAP {
-    let data = pic.data().as_ptr() as *mut winapi::ctypes::c_void;
+    let bgra_data = pic.to_bgra();
+    let data = bgra_data.as_ptr() as *mut winapi::ctypes::c_void;
     let width = pic.width() as i32;
     let height = pic.height() as i32;
 
