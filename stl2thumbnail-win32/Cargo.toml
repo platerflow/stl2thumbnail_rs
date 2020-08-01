@@ -1,0 +1,16 @@
+[package]
+name = "stl2thumbnail-win32"
+version = "0.1.0"
+authors = ["Paul"]
+edition = "2018"
+
+[lib]
+name = "server" # Bug: COM registration only works if the server dll is named "server.dll" #157
+crate-type = ["cdylib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+stl2thumbnail = { version="1.0", path = "../" }
+com = "0.2.0"
+winapi = {version="0.3.9", features=["objidlbase", "winnt", "wtypes", "wingdi"]}
