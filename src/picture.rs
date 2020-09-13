@@ -2,6 +2,8 @@ use std::convert::From;
 use std::i32;
 
 use crate::mesh::Vec4;
+use gif::SetParameter;
+use std::mem::swap;
 
 #[derive(Debug, PartialEq)]
 pub struct RGBA {
@@ -105,10 +107,10 @@ impl Picture {
     pub fn to_bgra(&self) -> Vec<u8> {
         let mut bgra = Vec::<u8>::with_capacity(self.data.len());
         for i in (0..self.data.len()).step_by(4) {
-            bgra.push(self.data[i+2]);
-            bgra.push(self.data[i+1]);
-            bgra.push(self.data[i+0]);
-            bgra.push(self.data[i+3]);
+            bgra.push(self.data[i + 2]);
+            bgra.push(self.data[i + 1]);
+            bgra.push(self.data[i + 0]);
+            bgra.push(self.data[i + 3]);
         }
 
         bgra
@@ -150,6 +152,104 @@ impl Picture {
             if e2 <= dx {
                 err += dx;
                 y += sy;
+            }
+        }
+    }
+
+    pub fn line_aa(&mut self, mut x0: i32, mut y0: i32, mut x1: i32, mut y1: i32, rgba: &RGBA) {
+        // Xiaolin Wu's line algorithm
+        // https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm
+        fn ipart(x: f32) -> f32 {
+            x.floor()
+        }
+
+        fn round(x: f32) -> f32 {
+            ipart(x + 0.5)
+        }
+
+        fn fpart(x: f32) -> f32 {
+            x - x.floor()
+        }
+
+        fn rfpart(x: f32) -> f32 {
+            1.0 - fpart(x)
+        }
+
+        fn plot(pic: &mut Picture, x: f32, y: f32, c: f32, rgba: &RGBA) {
+            pic.set(
+                x as usize,
+                y as usize,
+                &(
+                    (rgba.r as f32 * c) as u8,
+                    (rgba.r as f32 * c) as u8,
+                    (rgba.r as f32 * c) as u8,
+                    (rgba.r as f32 * c) as u8,
+                )
+                    .into(),
+            );
+        }
+
+        let steep = (y1 - y0).abs() > (x1 - x0).abs();
+
+        if steep {
+            swap(&mut x0, &mut y0);
+            swap(&mut x1, &mut y1);
+        } else if x0 > x1 {
+            swap(&mut x0, &mut x1);
+            swap(&mut y0, &mut y1);
+        }
+
+        let mut dx = (x1 - x0) as f32;
+        let mut dy = (y1 - y0) as f32;
+
+        let mut grad = dy / dx;
+        if dx == 0.0 {
+            grad = 1.0;
+        }
+
+        // first endpoint
+        let xend = round(x0 as f32);
+        let yend = y0 as f32 + grad * (xend - x0 as f32);
+        let xgap = rfpart(x0 as f32 + 0.5);
+        let mut xpxl1 = xend;
+        let mut ypxl1 = ipart(yend);
+        if steep {
+            plot(self, ypxl1, xpxl1, rfpart(yend) * xgap, rgba);
+            plot(self, ypxl1 + 1.0, xpxl1, fpart(yend) * xgap, rgba)
+        } else {
+            plot(self, xpxl1, ypxl1, rfpart(yend) * xgap, rgba);
+            plot(self, xpxl1, ypxl1 + 1.0, fpart(yend) * xgap, rgba);
+        }
+
+        // first y-intersection for the main loop
+        let mut intery = yend + grad;
+
+        // second endpoint
+        let xend = round(x1 as f32);
+        let yend = y1 as f32 + grad * (xend - x1 as f32);
+        let xgap = fpart(x1 as f32 + 0.5);
+        let xpxl2 = xend;
+        let ypxl2 = ipart(yend);
+        if steep {
+            plot(self, ypxl2, xpxl2, rfpart(yend) * xgap, rgba);
+            plot(self, ypxl2 + 1.0, xpxl2, fpart(yend) * xgap, rgba);
+        } else {
+            plot(self, xpxl2, ypxl2, rfpart(yend) * xgap, rgba);
+            plot(self, xpxl2, ypxl2 + 1.0, fpart(yend) * xgap, rgba);
+        }
+
+        // main loop
+        if steep {
+            for x in (xpxl1 + 1.0) as i32..(xpxl2 - 1.0) as i32 {
+                plot(self, ipart(intery), x as f32, rfpart(intery), rgba);
+                plot(self, ipart(intery) + 1.0, x as f32, fpart(intery), rgba);
+                intery += grad;
+            }
+        } else {
+            for x in (xpxl1 + 1.0) as i32..(xpxl2 - 1.0) as i32 {
+                plot(self, x as f32, ipart(intery), rfpart(intery), rgba);
+                plot(self, x as f32, ipart(intery) + 1.0, fpart(intery), rgba);
+                intery += grad;
             }
         }
     }
@@ -208,5 +308,13 @@ mod tests {
 
         let rgba: RGBA = "FF00FF00".into();
         assert_eq!(rgba, (255, 0, 255, 0).into());
+    }
+
+    #[test]
+    fn test_line() {
+        let mut pic = Picture::new(512, 512);
+        pic.line_aa(0, 0, 512, 512, &(1.0, 0.0, 0.0, 1.0).into());
+        pic.line_aa(0, 0, 10, 512, &(1.0, 0.0, 0.0, 1.0).into());
+        pic.save("test.png");
     }
 }
