@@ -265,12 +265,13 @@ fn draw_grid(pic: &mut Picture, vp: &Mat4, z: f32, color: &Vec3, model_size: Vec
         let sp0 = matmul(&vp, &p0).xy();
         let sp1 = matmul(&vp, &p1).xy();
 
-        pic.line(
+        pic.thick_line(
             ((sp0.x + 1.0) / 2.0 * pic.width() as f32) as i32,
             ((sp0.y + 1.0) / 2.0 * pic.height() as f32) as i32,
             ((sp1.x + 1.0) / 2.0 * pic.width() as f32) as i32,
             ((sp1.y + 1.0) / 2.0 * pic.height() as f32) as i32,
             &grid_color,
+            3.0,
         );
     }
 }

@@ -7,6 +7,7 @@ mod picture;
 mod rasterbackend;
 mod zbuffer;
 
+use anyhow::Result;
 use encoder::encode_gif;
 use encoder::*;
 use mesh::{LazyMesh, Mesh};
@@ -18,7 +19,7 @@ use rasterbackend::RasterBackend;
 use clap::{App, Arg};
 use std::error::Error;
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<()> {
     let matches = App::new("stl2thumbnail")
         .version(clap::crate_version!())
         .about("Generates thumbnails for STL files")
@@ -124,7 +125,7 @@ fn create(
     elevation_angle: f32,
     path: &str,
     turntable: bool,
-) -> Result<(), std::io::Error> {
+) -> Result<()> {
     if turntable {
         create_turntable_animation(width, height, mesh, elevation_angle, path)
     } else {
@@ -138,7 +139,7 @@ fn create_still(
     mesh: impl IntoIterator<Item = Triangle> + Copy,
     elevation_angle: f32,
     path: &str,
-) -> Result<(), std::io::Error> {
+) -> Result<()> {
     let elevation_angle = elevation_angle * std::f32::consts::PI / 180.0;
     let mut backend = RasterBackend::new(width, height);
 
@@ -157,7 +158,7 @@ fn create_turntable_animation(
     mesh: impl IntoIterator<Item = Triangle> + Copy,
     elevation_angle: f32,
     path: &str,
-) -> Result<(), std::io::Error> {
+) -> Result<()> {
     let elevation_angle = elevation_angle * std::f32::consts::PI / 180.0;
     let mut backend = RasterBackend::new(width, height);
     //backend.render_options.grid_visible = false;

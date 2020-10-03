@@ -1,7 +1,8 @@
 use crate::picture::Picture;
-use gif::{Frame, SetParameter};
+use anyhow::Result;
+use gif::Frame;
 
-pub fn encode_gif(path: &str, pictures: &[Picture]) -> std::io::Result<()> {
+pub fn encode_gif(path: &str, pictures: &[Picture]) -> Result<()> {
     let file = std::fs::File::create(path)?;
 
     let mut encoder = gif::Encoder::new(
@@ -11,7 +12,7 @@ pub fn encode_gif(path: &str, pictures: &[Picture]) -> std::io::Result<()> {
         &[],
     )?;
 
-    encoder.set(gif::Repeat::Infinite)?;
+    encoder.set_repeat(gif::Repeat::Infinite)?;
 
     let width = pictures.first().unwrap().width() as u16;
     let height = pictures.first().unwrap().height() as u16;
