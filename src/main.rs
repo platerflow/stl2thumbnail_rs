@@ -82,12 +82,12 @@ fn main() -> Result<()> {
     let turntable = matches.is_present("TURNTABLE");
     let width = matches
         .value_of("WIDTH")
-        .unwrap_or("256")
+        .unwrap_or("")
         .parse::<usize>()
         .unwrap_or(256);
     let height = matches
         .value_of("HEIGHT")
-        .unwrap_or("256")
+        .unwrap_or("")
         .parse::<usize>()
         .unwrap_or(256);
 
