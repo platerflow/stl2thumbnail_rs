@@ -2,7 +2,6 @@ use std::convert::From;
 use std::i32;
 
 use crate::mesh::Vec4;
-use std::mem::swap;
 use std::ops::{Add, Mul};
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -214,9 +213,9 @@ impl Picture {
         } else {
             ((dx * dx + dy * dy) as f32).sqrt()
         };
-        let mut x2 = 0;
-        let mut y2 = 0;
-        let mut e2 = 0;
+        let mut x2;
+        let mut y2;
+        let mut e2;
 
         let wd = (width + 1.0) / 2.0;
         loop {
@@ -279,7 +278,7 @@ impl Picture {
             return;
         }
 
-        let stride = self.stride();
+        // draw a over b
         let b = self.get(x, y);
         let a = rgba;
 
@@ -288,8 +287,8 @@ impl Picture {
         let alpha_b = b.a as f32 / 255.0;
         let alpha_c = alpha_a + (1.0 - alpha_a) * alpha_b;
 
-        let mut new_p = (a * (alpha_a / alpha_c) + b * (((1.0 - alpha_a) * alpha_b) / alpha_c));
-        new_p.a = (alpha_c * 255.0 ) as u8;
+        let mut new_p = a * (alpha_a / alpha_c) + b * (((1.0 - alpha_a) * alpha_b) / alpha_c);
+        new_p.a = (alpha_c * 255.0) as u8;
         self.set(x, y, &new_p);
     }
 
@@ -348,6 +347,6 @@ mod tests {
 
         pic.thick_line(0, 256, 512, 256, &(1.0, 0.0, 0.0, 1.0).into(), 1.0);
         pic.thick_line(256, 0, 256, 512, &(1.0, 0.0, 0.0, 1.0).into(), 1.0);
-        pic.save("test.png");
+        pic.save("test.png").unwrap();
     }
 }
