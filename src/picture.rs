@@ -202,7 +202,8 @@ impl Picture {
     }
 
     pub fn thick_line(&mut self, mut x0: i32, mut y0: i32, x1: i32, y1: i32, rgba: &RGBA, width: f32) {
-        // http://members.chello.at/~easyfilter/bresenham.html
+        // Anti-aliased thick line
+        // Ref: http://members.chello.at/~easyfilter/bresenham.html
         let dx = (x1 - x0).abs();
         let dy = (y1 - y0).abs();
         let sx = if x0 < x1 { 1 } else { -1 };
