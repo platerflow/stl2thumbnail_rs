@@ -62,29 +62,31 @@ fn main() -> Result<()> {
             Arg::with_name("WIDTH")
                 .short("w")
                 .long("width")
+                .takes_value(true)
                 .help("width of the generated image (defaults to 256)"),
         )
         .arg(
             Arg::with_name("HEIGHT")
                 .short("h")
                 .long("height")
+                .takes_value(true)
                 .help("height of the generated image (defaults to 256)"),
         )
         .get_matches();
 
     let input = matches.value_of("INPUT").unwrap();
     let output = matches.value_of("OUTPUT").unwrap();
-    let verbose = matches.occurrences_of("VERBOSE") > 0;
-    let lazy = matches.occurrences_of("LAZY") > 0;
-    let recalculate_normals = matches.occurrences_of("RECALC_NORMALS") > 0;
-    let turntable = matches.occurrences_of("TURNTABLE") > 0;
+    let verbose = matches.is_present("VERBOSE");
+    let lazy = matches.is_present("LAZY");
+    let recalculate_normals = matches.is_present("RECALC_NORMALS");
+    let turntable = matches.is_present("TURNTABLE");
     let width = matches
         .value_of("WIDTH")
         .unwrap_or("256")
         .parse::<usize>()
         .unwrap_or(256);
     let height = matches
-        .value_of("WIDTH")
+        .value_of("HEIGHT")
         .unwrap_or("256")
         .parse::<usize>()
         .unwrap_or(256);
