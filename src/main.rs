@@ -97,6 +97,7 @@ fn main() -> Result<()> {
         let parsed_mesh = LazyMesh::new(parser);
 
         if verbose {
+            println!("Size                  '{}x{}'", width, height);
             println!("Input                 '{}'", input);
             println!("Output                '{}'", output);
             println!("Recalculate normals   '{}'", recalculate_normals);
@@ -108,6 +109,7 @@ fn main() -> Result<()> {
         let parsed_mesh = parser.read_all()?;
 
         if verbose {
+            println!("Size                  '{}x{}'", width, height);
             println!("Input                 '{}'", input);
             println!("Output                '{}'", output);
             println!("Recalculate normals   '{}'", recalculate_normals);
