@@ -16,6 +16,7 @@ pub struct RenderOptions {
     pub background_color: Vec4,
     pub zoom: f32,
     pub grid_visible: bool,
+    pub draw_size_hint: bool,
 }
 
 impl Default for RenderOptions {
@@ -26,10 +27,11 @@ impl Default for RenderOptions {
             light_color: Vec3::new(0.6, 0.6, 0.6),
             ambient_color: Vec3::new(0.4, 0.4, 0.4),
             model_color: Vec3::new(0.0, 0.45, 1.0),
-            grid_color: Vec3::new(0.0, 0.0, 0.0),
+            grid_color: Vec3::new(0.1, 0.1, 0.1),
             background_color: Vec4::new(1.0, 1.0, 1.0, 1.0),
             grid_visible: true,
             zoom: 1.0,
+            draw_size_hint: true,
         }
     }
 }
@@ -213,6 +215,36 @@ impl RasterBackend {
             }
         }
 
+        if self.render_options.draw_size_hint && self.height >= 96 {
+            let margin = 3;
+            let text_to_height_ratio = 16;
+
+            let text = format!(
+                "{}x{}x{}",
+                aabb.size().x as i32,
+                aabb.size().y as i32,
+                aabb.size().z as i32
+            );
+
+            let text_size = pic.height() / text_to_height_ratio;
+
+            pic.fill_rect(
+                0,
+                pic.height() as i32 - (text_size + margin * 2) as i32,
+                pic.width() as i32,
+                pic.height() as i32,
+                &"333333FF".into(),
+            );
+
+            pic.stroke_string(
+                margin,
+                pic.height() - text_size - margin,
+                &text,
+                text_size as f32,
+                &"FFFFFFFF".into(),
+            );
+        }
+
         pic
     }
 }
@@ -271,7 +303,7 @@ fn draw_grid(pic: &mut Picture, vp: &Mat4, z: f32, color: &Vec3, model_size: Vec
             ((sp1.x + 1.0) / 2.0 * pic.width() as f32) as i32,
             ((sp1.y + 1.0) / 2.0 * pic.height() as f32) as i32,
             &grid_color,
-            3.0,
+            1.0,
         );
     }
 }

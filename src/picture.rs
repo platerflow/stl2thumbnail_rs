@@ -1,7 +1,7 @@
 use std::convert::From;
 use std::i32;
 
-use crate::mesh::Vec4;
+use crate::mesh::{Vec2, Vec4};
 use std::ops::{Add, Mul};
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -321,6 +321,159 @@ impl Picture {
 
         Ok(())
     }
+
+    pub fn stroke_string(&mut self, x: usize, y: usize, s: &str, char_size: f32, rgba: &RGBA) {
+        let mut i = 0;
+        for c in s.chars().into_iter() {
+            self.stroke_letter(x + i * (char_size * 0.8 + 6.0) as usize, y, c, char_size, rgba);
+            i += 1;
+        }
+    }
+
+    pub fn stroke_letter(&mut self, x: usize, y: usize, c: char, char_size: f32, rgba: &RGBA) {
+        let points = match c {
+            '0' => vec![
+                Vec2::new(0.0, 0.0),
+                Vec2::new(1.0, 0.0),
+                Vec2::new(1.0, 0.0),
+                Vec2::new(1.0, 1.0),
+                Vec2::new(1.0, 1.0),
+                Vec2::new(0.0, 1.0),
+                Vec2::new(0.0, 1.0),
+                Vec2::new(0.0, 0.0),
+            ],
+
+            '1' => vec![Vec2::new(1.0, 0.0), Vec2::new(1.0, 1.0)],
+
+            '2' => vec![
+                Vec2::new(0.0, 0.0),
+                Vec2::new(1.0, 0.0),
+                Vec2::new(1.0, 0.0),
+                Vec2::new(1.0, 0.5),
+                Vec2::new(1.0, 0.5),
+                Vec2::new(0.0, 0.5),
+                Vec2::new(0.0, 0.5),
+                Vec2::new(0.0, 1.0),
+                Vec2::new(0.0, 1.0),
+                Vec2::new(1.0, 1.0),
+            ],
+
+            '3' => vec![
+                Vec2::new(0.0, 0.0),
+                Vec2::new(1.0, 0.0),
+                Vec2::new(1.0, 0.0),
+                Vec2::new(1.0, 1.0),
+                Vec2::new(1.0, 1.0),
+                Vec2::new(0.0, 1.0),
+                Vec2::new(1.0, 0.5),
+                Vec2::new(0.0, 0.5),
+            ],
+
+            '4' => vec![
+                Vec2::new(0.0, 0.0),
+                Vec2::new(0.0, 0.5),
+                Vec2::new(0.0, 0.5),
+                Vec2::new(1.0, 0.5),
+                Vec2::new(1.0, 0.0),
+                Vec2::new(1.0, 1.0),
+            ],
+
+            '5' => vec![
+                Vec2::new(0.0, 1.0),
+                Vec2::new(1.0, 1.0),
+                Vec2::new(1.0, 1.0),
+                Vec2::new(1.0, 0.5),
+                Vec2::new(1.0, 0.5),
+                Vec2::new(0.0, 0.5),
+                Vec2::new(0.0, 0.5),
+                Vec2::new(0.0, 0.0),
+                Vec2::new(0.0, 0.0),
+                Vec2::new(1.0, 0.0),
+            ],
+
+            '6' => vec![
+                Vec2::new(0.0, 0.0),
+                Vec2::new(1.0, 0.0),
+                Vec2::new(0.0, 0.0),
+                Vec2::new(0.0, 1.0),
+                Vec2::new(0.0, 1.0),
+                Vec2::new(1.0, 1.0),
+                Vec2::new(1.0, 1.0),
+                Vec2::new(1.0, 0.5),
+                Vec2::new(1.0, 0.5),
+                Vec2::new(0.0, 0.5),
+            ],
+
+            '7' => vec![
+                Vec2::new(0.0, 0.0),
+                Vec2::new(1.0, 0.0),
+                Vec2::new(1.0, 0.0),
+                Vec2::new(1.0, 1.0),
+            ],
+
+            '8' => vec![
+                Vec2::new(0.0, 0.0),
+                Vec2::new(1.0, 0.0),
+                Vec2::new(1.0, 0.0),
+                Vec2::new(1.0, 1.0),
+                Vec2::new(1.0, 1.0),
+                Vec2::new(0.0, 1.0),
+                Vec2::new(0.0, 1.0),
+                Vec2::new(0.0, 0.0),
+                Vec2::new(0.0, 0.5),
+                Vec2::new(1.0, 0.5),
+            ],
+
+            '9' => vec![
+                Vec2::new(0.0, 0.0),
+                Vec2::new(1.0, 0.0),
+                Vec2::new(1.0, 0.0),
+                Vec2::new(1.0, 1.0),
+                Vec2::new(1.0, 1.0),
+                Vec2::new(0.0, 1.0),
+                Vec2::new(0.0, 0.0),
+                Vec2::new(0.0, 0.5),
+                Vec2::new(0.0, 0.5),
+                Vec2::new(1.0, 0.5),
+            ],
+
+            'x' => vec![
+                Vec2::new(0.0, 0.0),
+                Vec2::new(1.0, 1.0),
+                Vec2::new(1.0, 0.0),
+                Vec2::new(0.0, 1.0),
+            ],
+
+            'm' => vec![
+                Vec2::new(0.0, 0.5),
+                Vec2::new(1.0, 0.5),
+                Vec2::new(0.0, 0.5),
+                Vec2::new(0.0, 1.0),
+                Vec2::new(0.5, 0.5),
+                Vec2::new(0.5, 1.0),
+                Vec2::new(1.0, 0.5),
+                Vec2::new(1.0, 1.0),
+            ],
+
+            _ => vec![],
+        };
+
+        for p in points.chunks(2) {
+            let x0 = p[0].x * char_size * 0.8 + x as f32;
+            let y0 = p[0].y * char_size + y as f32;
+            let x1 = p[1].x * char_size * 0.8 + x as f32;
+            let y1 = p[1].y * char_size + y as f32;
+            self.thick_line(x0 as i32, y0 as i32, x1 as i32, y1 as i32, rgba, 3.0);
+        }
+    }
+
+    pub fn fill_rect(&mut self, x0: i32, y0: i32, x1: i32, y1: i32, rgba: &RGBA) {
+        for x in x0.max(0)..=x1.min(self.width as i32 - 1) {
+            for y in y0.max(0)..=y1.min(self.height as i32 - 1) {
+                self.set(x as usize, y as usize, rgba);
+            }
+        }
+    }
 }
 
 mod tests {
@@ -347,6 +500,16 @@ mod tests {
 
         pic.thick_line(0, 256, 512, 256, &(1.0, 0.0, 0.0, 1.0).into(), 1.0);
         pic.thick_line(256, 0, 256, 512, &(1.0, 0.0, 0.0, 1.0).into(), 1.0);
+
+        // plot chars
+        let mut i = 0;
+        for c in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'x', 'm'].iter() {
+            pic.stroke_letter(100 + i * 14, 100, *c, 10.0, &"000000FF".into());
+            i += 1;
+        }
+
+        pic.stroke_string(100, 200, "12x55mm", 10.0, &"E6E6E6FF".into());
+
         pic.save("test.png").unwrap();
     }
 }
