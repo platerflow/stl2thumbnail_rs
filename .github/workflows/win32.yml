@@ -35,8 +35,11 @@ jobs:
         with:
           script-file: ${{ github.workspace }}/dist/NSIS/install.nsi
           
+      - name: test-dir
+        run: dir
+          
       - name: Upload artifact
         uses: actions/upload-artifact@v1.0.0
         with:
-          name: install.exe
-          path: ${{ github.workspace }}/install.exe
+          name: Installer.exe
+          path: ${{ github.workspace }}/Installer.exe
