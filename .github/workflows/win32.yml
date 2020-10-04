@@ -24,11 +24,23 @@ jobs:
 
       # build COM library
       - name: com library
-        run: cargo build --release --out-dir="${{ github.workspace }}/dist/NSIS"
+        run: cargo build --release
         working-directory: ${{ github.workspace }}/desktop_integration/win32
+      
+      # copy server.dll
+      - name: dll copy
+        run: cp ${{ github.workspace }}/desktop_integration/win32/target/release/server.dll ${{ github.workspace }}/dist/NSIS
           
       # Create nullsoft installer
       - name: Create nsis installer
         uses: joncloud/makensis-action@v3.3
         with:
-          script-file: ${{ github.workspace }}/dist/NSIS/install.nsi
+          script-file: install.nsi
+          working-directory: ${{ github.workspace }}/dist/NSIS
+          
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: install.exe
+          path: install.exe
+          working-directory: ${{ github.workspace }}/dist/NSIS
