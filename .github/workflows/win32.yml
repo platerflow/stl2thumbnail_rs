@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: win32 deploy
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
@@ -35,12 +35,10 @@ jobs:
       - name: Create nsis installer
         uses: joncloud/makensis-action@v3.3
         with:
-          script-file: install.nsi
-          working-directory: ${{ github.workspace }}/dist/NSIS
+          script-file: ${{ github.workspace }}/dist/NSIS/install.nsi
           
       - name: Upload artifact
         uses: actions/upload-artifact@v1.0.0
         with:
           name: install.exe
-          path: install.exe
-          working-directory: ${{ github.workspace }}/dist/NSIS
+          path: ${{ github.workspace }}/dist/NSIS/install.exe
