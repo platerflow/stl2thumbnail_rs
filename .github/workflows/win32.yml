@@ -37,9 +37,10 @@ jobs:
           
       - name: test-dir
         run: dir
+        working-directory: ${{ github.workspace }}/dist/NSIS
           
       - name: Upload artifact
         uses: actions/upload-artifact@v1.0.0
         with:
           name: Installer.exe
-          path: ${{ github.workspace }}/Installer.exe
+          path: ${{ github.workspace }}/dist/NSIS/Installer.exe
