@@ -54,9 +54,12 @@ void cleanup(void* data) {
 bool StlThumbCreator::create(const QString& path, int width, int height, QImage& img)
 {
     //qCDebug(LOG_STL_THUMBS) << "Creating thumbnail for " << path;
+    
+    s2t_Flags flags;
+    flags.size_hint = height >= 256;
 
     // render
-    const auto pic = s2t_render(path.toStdString().c_str(), width, height);
+    const auto pic = s2t_render(path.toStdString().c_str(), width, height, flags);
     
     // failed?
     if(!pic.data)

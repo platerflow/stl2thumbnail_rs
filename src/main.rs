@@ -84,22 +84,23 @@ fn main() -> Result<()> {
             Arg::with_name("SIZE_HINT")
                 .short("d")
                 .long("dimensions")
-                .help("Draws the dimensions underneath the model (requires height of at least 96 pixels)"),
+                .help("Draws the dimensions underneath the model (requires height of at least 128 pixels)"),
         )
         .get_matches();
 
     let input = matches.value_of("INPUT").unwrap();
     let output = matches.value_of("OUTPUT").unwrap();
+
+    let width = matches.value_of("WIDTH").unwrap_or("").parse::<usize>().unwrap_or(256);
+    let height = matches.value_of("HEIGHT").unwrap_or("").parse::<usize>().unwrap_or(256);
+
     let flags = Flags {
         verbose: matches.is_present("VERBOSE"),
         lazy: matches.is_present("LAZY"),
         recalculate_normals: matches.is_present("RECALC_NORMALS"),
-        size_hint: matches.is_present("SIZE_HINT"),
+        size_hint: matches.is_present("SIZE_HINT") && height >= 128,
         turntable: matches.is_present("TURNTABLE"),
     };
-
-    let width = matches.value_of("WIDTH").unwrap_or("").parse::<usize>().unwrap_or(256);
-    let height = matches.value_of("HEIGHT").unwrap_or("").parse::<usize>().unwrap_or(256);
 
     let mut parser = Parser::from_file(&input, flags.recalculate_normals)?;
 

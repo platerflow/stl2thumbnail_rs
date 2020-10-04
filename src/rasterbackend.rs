@@ -215,7 +215,7 @@ impl RasterBackend {
             }
         }
 
-        if self.render_options.draw_size_hint && self.height >= 96 {
+        if self.render_options.draw_size_hint {
             let margin = 3;
             let text_to_height_ratio = 16;
 

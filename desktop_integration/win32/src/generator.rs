@@ -51,6 +51,7 @@ impl IThumbnailProvider for WinSTLThumbnailGenerator {
             let mut backend = RasterBackend::new(cx as usize, cx as usize);
             let (aabb, scale) = backend.fit_mesh_scale(&mesh);
             backend.render_options.zoom = 1.05;
+            backend.render_options.draw_size_hint = cx >= 256;
             let pic = backend.render(&mesh, scale, &aabb);
 
             *phbmp = create_hbitmap_from_picture(&pic);

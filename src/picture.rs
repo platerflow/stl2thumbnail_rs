@@ -325,7 +325,7 @@ impl Picture {
     pub fn stroke_string(&mut self, x: usize, y: usize, s: &str, char_size: f32, rgba: &RGBA) {
         let mut i = 0;
         for c in s.chars().into_iter() {
-            self.stroke_letter(x + i * (char_size * 0.8 + 6.0) as usize, y, c, char_size, rgba);
+            self.stroke_letter(x + i * (char_size * 0.7 + 6.0) as usize, y, c, char_size, rgba);
             i += 1;
         }
     }
@@ -459,9 +459,9 @@ impl Picture {
         };
 
         for p in points.chunks(2) {
-            let x0 = p[0].x * char_size * 0.8 + x as f32;
+            let x0 = p[0].x * char_size * 0.7 + x as f32;
             let y0 = p[0].y * char_size + y as f32;
-            let x1 = p[1].x * char_size * 0.8 + x as f32;
+            let x1 = p[1].x * char_size * 0.7 + x as f32;
             let y1 = p[1].y * char_size + y as f32;
             self.thick_line(x0 as i32, y0 as i32, x1 as i32, y1 as i32, rgba, 3.0);
         }

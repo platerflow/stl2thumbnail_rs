@@ -6,7 +6,7 @@ use crate::parser::Parser;
 use crate::rasterbackend::RasterBackend;
 
 #[repr(C)]
-pub struct PictureBuffer {
+pub struct s2t_PictureBuffer {
     /// data in r8g8b8a8 format
     data: *const u8,
     /// length of the buffer
@@ -15,13 +15,18 @@ pub struct PictureBuffer {
     depth: usize,
 }
 
+#[repr(C)]
+pub struct s2t_Flags {
+    size_hint: bool,
+}
+
 #[no_mangle]
 /// Renders a mesh to a picture
 /// Free the buffer with free_picture_buffer
-pub extern "C" fn s2t_render(path: *const c_char, width: usize, height: usize) -> PictureBuffer {
+pub extern "C" fn s2t_render(path: *const c_char, width: usize, height: usize, flags: s2t_Flags) -> s2t_PictureBuffer {
     let path = unsafe { CStr::from_ptr(path).to_str().unwrap() };
 
-    let backend = RasterBackend::new(width, height);
+    let mut backend = RasterBackend::new(width, height);
     let parser = Parser::from_file(path, true);
 
     if let Ok(mut parser) = parser {
@@ -29,6 +34,11 @@ pub extern "C" fn s2t_render(path: *const c_char, width: usize, height: usize) -
 
         if let Ok(mesh) = mesh {
             let (aabb, scale) = backend.fit_mesh_scale(&mesh);
+
+            // set flags
+            backend.render_options.draw_size_hint = flags.size_hint;
+
+            // render
             let mut pic = backend.render(&mesh, scale, &aabb);
 
             let boxed_data = pic.data_as_boxed_slice();
@@ -40,7 +50,7 @@ pub extern "C" fn s2t_render(path: *const c_char, width: usize, height: usize) -
             // leak the memory owned by boxed_data
             forget(boxed_data);
 
-            return PictureBuffer {
+            return s2t_PictureBuffer {
                 data,
                 len,
                 stride,
@@ -49,7 +59,7 @@ pub extern "C" fn s2t_render(path: *const c_char, width: usize, height: usize) -
         }
     }
 
-    PictureBuffer {
+    s2t_PictureBuffer {
         data: std::ptr::null(),
         len: 0,
         stride: 0,
@@ -58,7 +68,7 @@ pub extern "C" fn s2t_render(path: *const c_char, width: usize, height: usize) -
 }
 
 #[no_mangle]
-pub extern "C" fn s2t_free_picture_buffer(buffer: PictureBuffer) {
+pub extern "C" fn s2t_free_picture_buffer(buffer: s2t_PictureBuffer) {
     unsafe {
         let s = std::slice::from_raw_parts_mut(buffer.data as *mut u8, buffer.len);
 
