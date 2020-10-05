@@ -21,6 +21,18 @@ impl RGBA {
             a: (self.a as f32 * a) as u8,
         }
     }
+
+    pub fn over(&self, b: RGBA) -> Self {
+        // draw self over b
+        // Porter-Duff algorithm
+        let alpha_a = self.a as f32 / 255.0;
+        let alpha_b = b.a as f32 / 255.0;
+        let alpha_c = alpha_a + (1.0 - alpha_a) * alpha_b;
+
+        let mut new_p = self * (alpha_a / alpha_c) + b * (((1.0 - alpha_a) * alpha_b) / alpha_c);
+        new_p.a = (alpha_c * 255.0) as u8;
+        new_p
+    }
 }
 
 impl Mul<f32> for RGBA {
@@ -81,7 +93,7 @@ impl From<(f32, f32, f32, f32)> for RGBA {
 
 impl From<&str> for RGBA {
     fn from(rgba: &str) -> Self {
-        assert_eq!(rgba.len(), 8);
+        assert_eq!(rgba.len(), 8, "expected format: 'RRGGBBAA'");
 
         Self {
             r: i32::from_str_radix(&rgba[0..2], 16).unwrap() as u8,
@@ -282,14 +294,7 @@ impl Picture {
         let b = self.get(x, y);
         let a = rgba;
 
-        // Porter-Duff algorithm
-        let alpha_a = a.a as f32 / 255.0;
-        let alpha_b = b.a as f32 / 255.0;
-        let alpha_c = alpha_a + (1.0 - alpha_a) * alpha_b;
-
-        let mut new_p = a * (alpha_a / alpha_c) + b * (((1.0 - alpha_a) * alpha_b) / alpha_c);
-        new_p.a = (alpha_c * 255.0) as u8;
-        self.set(x, y, &new_p);
+        self.set(x, y, &a.over(b));
     }
 
     pub fn get(&self, x: usize, y: usize) -> RGBA {
