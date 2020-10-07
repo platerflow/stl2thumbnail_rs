@@ -24,6 +24,9 @@ struct Settings {
     recalculate_normals: bool,
     turntable: bool,
     size_hint: bool,
+    grid: bool,
+    cam_elevation: f32,
+    cam_azimuth: f32,
 }
 
 fn main() -> Result<()> {
@@ -85,6 +88,25 @@ fn main() -> Result<()> {
                 .long("dimensions")
                 .help("Draws the dimensions underneath the model (requires height of at least 128 pixels)"),
         )
+        .arg(
+            Arg::with_name("CAM_ELEVATION")
+                .long("cam-elevation")
+                .takes_value(true)
+                .help("The camera's elevation"),
+        )
+        .arg(
+            Arg::with_name("CAM_AZIMUTH")
+                .long("cam-azimuth")
+                .takes_value(true)
+                .help("The camera's azimuth"),
+        )
+        .arg(
+            Arg::with_name("GRID_VISIBLE")
+                .short("g")
+                .long("grid")
+                .takes_value(true)
+                .help("Show or hide the grid"),
+        )
         .get_matches();
 
     let input = matches.value_of("INPUT").unwrap();
@@ -107,6 +129,21 @@ fn main() -> Result<()> {
         recalculate_normals: matches.is_present("RECALC_NORMALS"),
         size_hint: matches.is_present("SIZE_HINT") && height >= 128,
         turntable: matches.is_present("TURNTABLE"),
+        grid: matches
+            .value_of("GRID_VISIBLE")
+            .unwrap_or_default()
+            .parse::<bool>()
+            .unwrap_or(true),
+        cam_elevation: matches
+            .value_of("CAM_ELEVATION")
+            .unwrap_or_default()
+            .parse::<f32>()
+            .unwrap_or(25.0),
+        cam_azimuth: matches
+            .value_of("CAM_AZIMUTH")
+            .unwrap_or_default()
+            .parse::<f32>()
+            .unwrap_or(45.0),
     };
 
     if settings.verbose {
@@ -116,16 +153,19 @@ fn main() -> Result<()> {
         println!("Recalculate normals   '{}'", settings.recalculate_normals);
         println!("Low memory usage mode '{}'", settings.lazy);
         println!("Draw dimensions       '{}'", settings.size_hint);
+        println!("Grid visible          '{}'", settings.grid);
+        println!("Cam elevation         '{}'", settings.cam_elevation);
+        println!("Cam azimuth           '{}'", settings.cam_azimuth);
     }
 
     let mut parser = Parser::from_file(&input, settings.recalculate_normals)?;
 
     if settings.lazy {
         let parsed_mesh = LazyMesh::new(parser);
-        create(width, height, &parsed_mesh, 25.0, &output, &settings)?;
+        create(width, height, &parsed_mesh, &output, &settings)?;
     } else {
         let parsed_mesh = parser.read_all()?;
-        create(width, height, &parsed_mesh, 25.0, &output, &settings)?;
+        create(width, height, &parsed_mesh, &output, &settings)?;
     }
 
     Ok(())
@@ -135,14 +175,13 @@ fn create(
     width: usize,
     height: usize,
     mesh: impl IntoIterator<Item = Triangle> + Copy,
-    elevation_angle: f32,
     path: &str,
     settings: &Settings,
 ) -> Result<()> {
     if settings.turntable {
-        create_turntable_animation(width, height, mesh, elevation_angle, path, settings)
+        create_turntable_animation(width, height, mesh, path, settings)
     } else {
-        create_still(width, height, mesh, elevation_angle, path, settings)
+        create_still(width, height, mesh, path, settings)
     }
 }
 
@@ -150,14 +189,19 @@ fn create_still(
     width: usize,
     height: usize,
     mesh: impl IntoIterator<Item = Triangle> + Copy,
-    elevation_angle: f32,
     path: &str,
     settings: &Settings,
 ) -> Result<()> {
-    let elevation_angle = elevation_angle * std::f32::consts::PI / 180.0;
+    let elevation_angle = settings.cam_elevation * std::f32::consts::PI / 180.0;
     let mut backend = RasterBackend::new(width, height);
+    backend.render_options.grid_visible = settings.grid;
 
-    backend.render_options.view_pos = Vec3::new(1.0, 1.0, -elevation_angle.tan());
+    backend.render_options.view_pos = Vec3::new(
+        settings.cam_azimuth.to_radians().cos(),
+        settings.cam_azimuth.to_radians().sin(),
+        -settings.cam_elevation.to_radians().tan(),
+    );
+
     let (aabb, scale) = backend.fit_mesh_scale(mesh);
     backend.render_options.zoom = 1.05;
     backend.render_options.draw_size_hint = settings.size_hint;
@@ -171,23 +215,22 @@ fn create_turntable_animation(
     width: usize,
     height: usize,
     mesh: impl IntoIterator<Item = Triangle> + Copy,
-    elevation_angle: f32,
     path: &str,
     settings: &Settings,
 ) -> Result<()> {
-    let elevation_angle = elevation_angle * std::f32::consts::PI / 180.0;
     let mut backend = RasterBackend::new(width, height);
-    //backend.render_options.grid_visible = false;
+    backend.render_options.grid_visible = settings.grid;
     let mut pictures: Vec<Picture> = Vec::new();
 
-    backend.render_options.view_pos = Vec3::new(1.0, 1.0, -elevation_angle.tan());
+    backend.render_options.view_pos = Vec3::new(1.0, 1.0, -settings.cam_elevation.to_radians().tan());
     let (aabb, scale) = backend.fit_mesh_scale(mesh);
     backend.render_options.zoom = 1.05;
     backend.render_options.draw_size_hint = settings.size_hint;
 
     for i in 0..45 {
-        let angle = 8.0 * i as f32 * std::f32::consts::PI / 180.0;
-        backend.render_options.view_pos = Vec3::new(angle.cos(), angle.sin(), -elevation_angle.tan());
+        let angle = (8.0 * i as f32).to_radians();
+        backend.render_options.view_pos =
+            Vec3::new(angle.cos(), angle.sin(), -settings.cam_elevation.to_radians().tan());
         pictures.push(backend.render(mesh, scale, &aabb));
     }
 
