@@ -154,8 +154,8 @@ fn main() -> Result<()> {
         println!("Low memory usage mode '{}'", settings.lazy);
         println!("Draw dimensions       '{}'", settings.size_hint);
         println!("Grid visible          '{}'", settings.grid);
-        println!("Cam elevation         '{}'", settings.cam_elevation);
-        println!("Cam azimuth           '{}'", settings.cam_azimuth);
+        println!("Cam elevation         {}°", settings.cam_elevation);
+        println!("Cam azimuth           {}°", settings.cam_azimuth);
     }
 
     let mut parser = Parser::from_file(&input, settings.recalculate_normals)?;
