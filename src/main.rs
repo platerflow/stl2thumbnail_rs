@@ -17,6 +17,7 @@ use rasterbackend::RasterBackend;
 
 use clap::{App, Arg};
 use std::error::Error;
+use std::time::Duration;
 
 struct Settings {
     verbose: bool,
@@ -27,6 +28,7 @@ struct Settings {
     grid: bool,
     cam_elevation: f32,
     cam_azimuth: f32,
+    timeout: Option<Duration>,
 }
 
 fn main() -> Result<()> {
@@ -107,6 +109,12 @@ fn main() -> Result<()> {
                 .takes_value(true)
                 .help("Show or hide the grid"),
         )
+        .arg(
+            Arg::with_name("TIMEOUT")
+                .long("timeout")
+                .takes_value(true)
+                .help("Sets the time budget for the rendering process"),
+        )
         .get_matches();
 
     let input = matches.value_of("INPUT").unwrap();
@@ -144,6 +152,12 @@ fn main() -> Result<()> {
             .unwrap_or_default()
             .parse::<f32>()
             .unwrap_or(45.0),
+        timeout: matches
+            .value_of("TIMEOUT")
+            .unwrap_or_default()
+            .parse::<u64>()
+            .ok()
+            .map_or(None, |v| Some(Duration::from_millis(v))),
     };
 
     if settings.verbose {
@@ -156,6 +170,7 @@ fn main() -> Result<()> {
         println!("Grid visible          '{}'", settings.grid);
         println!("Cam elevation         {}°", settings.cam_elevation);
         println!("Cam azimuth           {}°", settings.cam_azimuth);
+        println!("Timeout               {:?}", settings.timeout);
     }
 
     let mut parser = Parser::from_file(&input, settings.recalculate_normals)?;
@@ -206,7 +221,7 @@ fn create_still(
     backend.render_options.zoom = 1.05;
     backend.render_options.draw_size_hint = settings.size_hint;
 
-    backend.render(mesh, scale, &aabb).save(path)?;
+    backend.render(mesh, scale, &aabb, settings.timeout).save(path)?;
 
     Ok(())
 }
@@ -231,7 +246,7 @@ fn create_turntable_animation(
         let angle = (8.0 * i as f32).to_radians();
         backend.render_options.view_pos =
             Vec3::new(angle.cos(), angle.sin(), -settings.cam_elevation.to_radians().tan());
-        pictures.push(backend.render(mesh, scale, &aabb));
+        pictures.push(backend.render(mesh, scale, &aabb, settings.timeout));
     }
 
     encode_gif(path, pictures.as_slice())?;

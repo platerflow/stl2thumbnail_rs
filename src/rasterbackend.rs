@@ -4,6 +4,7 @@ use crate::picture::*;
 use crate::zbuffer::*;
 
 use std::f32::consts::PI;
+use std::time::{Duration, Instant};
 
 #[derive(Debug)]
 pub struct RenderOptions {
@@ -80,7 +81,15 @@ impl RasterBackend {
         (aabb, scale_for_unitsize(&vp, &aabb))
     }
 
-    pub fn render(&self, mesh: impl IntoIterator<Item = Triangle> + Copy, model_scale: f32, aabb: &AABB) -> Picture {
+    pub fn render(
+        &self,
+        mesh: impl IntoIterator<Item = Triangle> + Copy,
+        model_scale: f32,
+        aabb: &AABB,
+        timeout: Option<Duration>,
+    ) -> Picture {
+        let start_time = Instant::now();
+
         let mut pic = Picture::new(self.width, self.height);
         let mut zbuf = ZBuffer::new(self.width, self.height);
         let mut scaled_aabb = aabb.clone();
@@ -122,6 +131,16 @@ impl RasterBackend {
         }
 
         for t in mesh {
+            // timed out?
+            if timeout.is_some() {
+                let dt = Instant::now() - start_time;
+                if dt > timeout.unwrap() {
+                    // abort
+                    println!("... timeout!");
+                    return pic;
+                }
+            }
+
             let normal = -t.normal;
 
             // backface culling

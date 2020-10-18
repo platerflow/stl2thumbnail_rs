@@ -4,15 +4,24 @@ use std::os::raw::c_char;
 
 use crate::parser::Parser;
 use crate::rasterbackend::RasterBackend;
+use std::time::Duration;
 
 #[repr(C)]
 pub struct s2t_PictureBuffer {
-    /// data in r8g8b8a8 format
+    /// data in rgba8888 format
     data: *const u8,
     /// length of the buffer
     len: usize,
     stride: usize,
     depth: usize,
+}
+
+#[repr(C)]
+pub struct s2t_RenderSettings {
+    width: usize,
+    height: usize,
+    size_hint: bool,
+    timeout: u64,
 }
 
 #[repr(C)]
@@ -23,10 +32,10 @@ pub struct s2t_Flags {
 #[no_mangle]
 /// Renders a mesh to a picture
 /// Free the buffer with free_picture_buffer
-pub extern "C" fn s2t_render(path: *const c_char, width: usize, height: usize, flags: s2t_Flags) -> s2t_PictureBuffer {
+pub extern "C" fn s2t_render(path: *const c_char, settings: s2t_RenderSettings) -> s2t_PictureBuffer {
     let path = unsafe { CStr::from_ptr(path).to_str().unwrap() };
 
-    let mut backend = RasterBackend::new(width, height);
+    let mut backend = RasterBackend::new(settings.width, settings.height);
     let parser = Parser::from_file(path, true);
 
     if let Ok(mut parser) = parser {
@@ -36,10 +45,10 @@ pub extern "C" fn s2t_render(path: *const c_char, width: usize, height: usize, f
             let (aabb, scale) = backend.fit_mesh_scale(&mesh);
 
             // set flags
-            backend.render_options.draw_size_hint = flags.size_hint;
+            backend.render_options.draw_size_hint = settings.size_hint;
 
             // render
-            let mut pic = backend.render(&mesh, scale, &aabb);
+            let mut pic = backend.render(&mesh, scale, &aabb, None);
 
             let boxed_data = pic.data_as_boxed_slice();
             let data = boxed_data.as_ptr();
