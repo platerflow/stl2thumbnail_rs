@@ -24,7 +24,7 @@ set(LIBS
 )
 
 add_library(${PROJECT_NAME} MODULE ${SRC_FILES})
-target_link_libraries(${PROJECT_NAME} ${LIBS} stl2thumbnail-rs)
+target_link_libraries(${PROJECT_NAME} ${LIBS} stl2thumbnail)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${PLUGIN_INSTALL_DIR})
 
