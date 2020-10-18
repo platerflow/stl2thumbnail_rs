@@ -1,0 +1,50 @@
+# Maintainer: krepa098 <krepa098@gmail.com>
+
+_pkgname=stl2thumbnail_rs
+pkgname=stl2thumbnail-git
+pkgver=v0.99.r3.gb4aad7f
+pkgrel=1
+pkgdesc="Enables file managers to generate thumbnails for STL files"
+arch=("i686" "x86_64")
+url="https://github.com/krepa098/stl2thumbnail_rs"
+license=("GPL")
+groups=()
+depends=()
+makedepends=("git" "rust")
+source=("$_pkgname::git+$url.git#branch=master")
+md5sums=("SKIP")
+options=('staticlibs')
+provides=('stl2thumbnail')
+
+_gitname="stl2thumbnail_rs"
+_gitbranch="master"
+
+pkgver() {
+  cd "${_pkgname}"
+  git describe --long --tags | sed "s/\([^-]*-g\)/r\1/;s/-/./g"
+}
+
+build() {
+  cd "${_pkgname}"
+  cargo build --release
+}
+
+prepare() {
+  cd "${_pkgname}"
+}
+
+package() {
+  mkdir -p "${pkgdir}/usr/bin"
+  cp "${_pkgname}/target/release/stl2thumbnail" "${pkgdir}/usr/bin"
+  
+  ls
+  
+  mkdir -p "${pkgdir}/usr/lib"
+  cp "${_pkgname}/target/release/libstl2thumbnail.so" "${pkgdir}/usr/lib"
+  
+  mkdir -p "${pkgdir}/usr/share/thumbnailers"
+  cp "${_pkgname}/desktop_integration/gnome/stl.thumbnailer" "${pkgdir}/usr/share/thumbnailers"
+  
+  mkdir -p "${pkgdir}/usr/include"
+  cp "${_pkgname}/include/stl2thumbnail.h" "${pkgdir}/usr/include"
+}

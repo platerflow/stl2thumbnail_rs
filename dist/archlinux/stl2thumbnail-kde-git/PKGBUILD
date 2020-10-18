@@ -1,0 +1,40 @@
+# Maintainer: krepa098 <krepa098@gmail.com>
+
+_pkgname=stl2thumbnail_rs
+pkgname=stl2thumbnail-kde-git
+pkgver=v0.99.r4.g98baff4
+pkgrel=1
+pkgdesc="Enables Dolphin to generate thumbnails for STL files"
+arch=("i686" "x86_64")
+url="https://github.com/krepa098/stl2thumbnail_rs"
+license=("GPL")
+groups=()
+depends=('stl2thumbnail')
+makedepends=("git" "rust")
+source=("$_pkgname::git+$url.git#branch=master")
+md5sums=("SKIP")
+options=('staticlibs')
+
+_gitname="stl2thumbnail_rs"
+_gitbranch="master"
+
+pkgver() {
+  cd "${_pkgname}"
+  git describe --long --tags | sed "s/\([^-]*-g\)/r\1/;s/-/./g"
+}
+
+build() {
+  cd "${_pkgname}/desktop_integration/kde/build"
+  cmake .. -DCMAKE_INSTALL_PREFIX="/usr"
+  cmake --build . --config Release
+}
+
+prepare() {
+  cd "${_pkgname}/desktop_integration/kde"
+  mkdir -p build
+}
+
+package() {
+  cd "${_pkgname}/desktop_integration/kde/build"
+  make DESTDIR="${pkgdir}/" install
+}
