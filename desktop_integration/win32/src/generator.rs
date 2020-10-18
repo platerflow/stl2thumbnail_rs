@@ -16,6 +16,7 @@ use std::cell::RefCell;
 use std::ffi::c_void;
 
 use std::io::Cursor;
+use std::time::Duration;
 use stl2thumbnail::parser::Parser;
 use stl2thumbnail::picture::Picture;
 use stl2thumbnail::rasterbackend::RasterBackend;
@@ -27,9 +28,7 @@ pub struct WinSTLThumbnailGenerator {
 
 impl WinSTLThumbnailGenerator {
     pub unsafe fn new() -> Box<Self> {
-        Self::allocate(
-            RefCell::new(Vec::new()),
-        )
+        Self::allocate(RefCell::new(Vec::new()))
     }
 }
 
@@ -55,7 +54,7 @@ impl IThumbnailProvider for WinSTLThumbnailGenerator {
             // 256 this is actually too small to be readable when it first appears,
             // but 768 makes no sense either
             backend.render_options.draw_size_hint = cx >= 256;
-            let pic = backend.render(&mesh, scale, &aabb);
+            let pic = backend.render(&mesh, scale, &aabb, Some(Duration::from_secs(20)));
 
             *phbmp = create_hbitmap_from_picture(&pic);
             *pdw_alpha = 0x2; // WTSAT_ARGB
