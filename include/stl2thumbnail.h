@@ -1,20 +1,42 @@
-#pragma once
+#include <cstdarg>
+#include <cstdint>
+#include <cstdlib>
+#include <ostream>
+#include <new>
 
-#include <stdint.h>
-#include <stddef.h>
+namespace s2t {
 
-// Linking to libstl2thumbnail requires -ldl -lm -pthread
+struct PictureBuffer {
+  /// data in rgba8888 format
+  const uint8_t *data;
+  /// length of the buffer
+  uint32_t len;
+  /// stride of the buffer
+  uint32_t stride;
+  /// depth of the buffer
+  uint32_t depth;
+};
 
-typedef struct s2t_PictureBuffer {
-    const uint8_t* data;
-    size_t len;
-    size_t stride;
-    size_t depth;
-} PictureBuffer;
+struct RenderSettings {
+  /// width of the image
+  uint32_t width;
+  /// height of the image
+  uint32_t height;
+  /// embed a size hint
+  bool size_hint;
+  /// max duration of the rendering, 0 to disable
+  uint64_t timeout;
+};
 
-typedef struct s2t_Flags {
-    bool size_hint;
-} Flags;
+extern "C" {
 
-s2t_PictureBuffer s2t_render(const char* path, size_t width, size_t height, Flags flags);
-void s2t_free_picture_buffer(s2t_PictureBuffer buffer);
+/// Renders a mesh to a picture
+/// Free the buffer with free_picture_buffer
+PictureBuffer render(const char *path, RenderSettings settings);
+
+/// Frees the memory of a PictureBuffer
+void free_picture_buffer(PictureBuffer buffer);
+
+} // extern "C"
+
+} // namespace s2t

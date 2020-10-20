@@ -16,12 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "thumbcreator.h"
-
-extern "C" 
-{
 #include "stl2thumbnail.h"
-}
-
 
 #include <QImage>
 #include <QString>
@@ -47,7 +42,7 @@ struct PicContainer {
 
 void cleanup(void* data) {
     auto container = static_cast<PicContainer*>(data);
-    s2t_free_picture_buffer(container->buffer);
+    s2t::free_picture_buffer(container->buffer);
     delete container;
 }
 
@@ -55,11 +50,14 @@ bool StlThumbCreator::create(const QString& path, int width, int height, QImage&
 {
     //qCDebug(LOG_STL_THUMBS) << "Creating thumbnail for " << path;
     
-    s2t_Flags flags;
-    flags.size_hint = height >= 256;
+    s2t::RenderSettings settings;
+    settings.width = width;
+    settings.height = height;
+    settings.timeout = 20000; // 20s
+    settings.size_hint = height >= 256;
 
     // render
-    const auto pic = s2t_render(path.toStdString().c_str(), width, height, flags);
+    const auto pic = s2t::render(path.toStdString().c_str(), settings);
     
     // failed?
     if(!pic.data)
