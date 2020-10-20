@@ -37,7 +37,7 @@ StlThumbCreator::StlThumbCreator()
 }
 
 struct PicContainer {
-    PictureBuffer buffer;
+    s2t::PictureBuffer buffer;
 };
 
 void cleanup(void* data) {
