@@ -36,7 +36,7 @@ pub struct RenderSettings {
 pub extern "C" fn render(path: *const c_char, settings: RenderSettings) -> PictureBuffer {
     let path = unsafe { CStr::from_ptr(path).to_str().unwrap() };
 
-    let mut backend = RasterBackend::new(settings.width as usize, settings.height as usize);
+    let mut backend = RasterBackend::new(settings.width, settings.height);
     let parser = Parser::from_file(path, true);
 
     if let Ok(mut parser) = parser {

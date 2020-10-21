@@ -40,13 +40,13 @@ impl Default for RenderOptions {
 #[derive(Debug)]
 pub struct RasterBackend {
     pub render_options: RenderOptions,
-    width: usize,
-    height: usize,
+    width: u32,
+    height: u32,
     aspect_ratio: f32,
 }
 
 impl RasterBackend {
-    pub fn new(width: usize, height: usize) -> Self {
+    pub fn new(width: u32, height: u32) -> Self {
         Self {
             render_options: RenderOptions::default(),
             width,
@@ -165,10 +165,10 @@ impl RasterBackend {
             let max_y = v0.y.max(v1.y).max(v2.y);
 
             // triangle bounding box in screen space
-            let smin_x = 0.max(((min_x + 1.0) / 2.0 * pic.width() as f32) as usize);
-            let smin_y = 0.max(((min_y + 1.0) / 2.0 * pic.height() as f32) as usize);
-            let smax_x = 0.max(pic.width().min(((max_x + 1.0) / 2.0 * pic.width() as f32) as usize));
-            let smax_y = 0.max(pic.height().min(((max_y + 1.0) / 2.0 * pic.height() as f32) as usize));
+            let smin_x = 0.max(((min_x + 1.0) / 2.0 * pic.width() as f32) as u32);
+            let smin_y = 0.max(((min_y + 1.0) / 2.0 * pic.height() as f32) as u32);
+            let smax_x = 0.max(pic.width().min(((max_x + 1.0) / 2.0 * pic.width() as f32) as u32));
+            let smax_y = 0.max(pic.height().min(((max_y + 1.0) / 2.0 * pic.height() as f32) as u32));
 
             for y in smin_y..=smax_y {
                 for x in smin_x..=smax_x {

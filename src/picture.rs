@@ -118,13 +118,13 @@ impl From<&Vec4> for RGBA {
 #[derive(Debug)]
 pub struct Picture {
     data: Vec<u8>,
-    width: usize,
-    height: usize,
-    depth: usize,
+    width: u32,
+    height: u32,
+    depth: u32,
 }
 
 impl Picture {
-    pub fn new(width: usize, height: usize) -> Self {
+    pub fn new(width: u32, height: u32) -> Self {
         let depth = 4;
         let mut data = Vec::new();
         data.resize((width * height * depth) as usize, 0);
@@ -140,19 +140,19 @@ impl Picture {
         pic
     }
 
-    pub fn stride(&self) -> usize {
+    pub fn stride(&self) -> u32 {
         self.width * self.depth
     }
 
-    pub fn width(&self) -> usize {
+    pub fn width(&self) -> u32 {
         self.width
     }
 
-    pub fn height(&self) -> usize {
+    pub fn height(&self) -> u32 {
         self.height
     }
 
-    pub fn depth(&self) -> usize {
+    pub fn depth(&self) -> u32 {
         self.depth
     }
 
@@ -195,7 +195,7 @@ impl Picture {
         let sy = if y0 < y1 { 1 } else { -1 };
         let mut err = dx + dy;
         loop {
-            self.set(x as usize, y as usize, rgba);
+            self.set(x as u32, y as u32, rgba);
             if x == x1 && y == y1 {
                 break;
             }
@@ -232,7 +232,7 @@ impl Picture {
         let wd = (width + 1.0) / 2.0;
         loop {
             let a = 1.0 - ((err - dx + dy).abs() as f32 / ed - wd).max(0.0);
-            self.alpha_blend(x0 as usize, y0 as usize, rgba.alpha(a));
+            self.alpha_blend(x0 as u32, y0 as u32, rgba.alpha(a));
             e2 = err;
             x2 = x0;
             if 2 * e2 >= -dx {
@@ -242,7 +242,7 @@ impl Picture {
                     e2 += dx;
                     y2 += sy;
                     let a = 1.0 - (e2.abs() as f32 / ed - wd).max(0.0);
-                    self.alpha_blend(x0 as usize, y2 as usize, rgba.alpha(a));
+                    self.alpha_blend(x0 as u32, y2 as u32, rgba.alpha(a));
                 }
 
                 if x0 == x1 {
@@ -260,7 +260,7 @@ impl Picture {
                     e2 += dy;
                     x2 += sx;
                     let a = 1.0 - (e2.abs() as f32 / ed - wd).max(0.0);
-                    self.alpha_blend(x2 as usize, y0 as usize, rgba.alpha(a));
+                    self.alpha_blend(x2 as u32, y0 as u32, rgba.alpha(a));
                 }
 
                 if y0 == y1 {
@@ -273,19 +273,19 @@ impl Picture {
         }
     }
 
-    pub fn set(&mut self, x: usize, y: usize, rgba: &RGBA) {
+    pub fn set(&mut self, x: u32, y: u32, rgba: &RGBA) {
         if x >= self.width || y >= self.height {
             return;
         }
 
         let stride = self.stride();
-        self.data[stride * y + (x * self.depth) + 0] = rgba.r;
-        self.data[stride * y + (x * self.depth) + 1] = rgba.g;
-        self.data[stride * y + (x * self.depth) + 2] = rgba.b;
-        self.data[stride * y + (x * self.depth) + 3] = rgba.a;
+        self.data[(stride * y + (x * self.depth) + 0) as usize] = rgba.r;
+        self.data[(stride * y + (x * self.depth) + 1) as usize] = rgba.g;
+        self.data[(stride * y + (x * self.depth) + 2) as usize] = rgba.b;
+        self.data[(stride * y + (x * self.depth) + 3) as usize] = rgba.a;
     }
 
-    pub fn alpha_blend(&mut self, x: usize, y: usize, rgba: RGBA) {
+    pub fn alpha_blend(&mut self, x: u32, y: u32, rgba: RGBA) {
         if x >= self.width || y >= self.height {
             return;
         }
@@ -297,13 +297,13 @@ impl Picture {
         self.set(x, y, &a.over(b));
     }
 
-    pub fn get(&self, x: usize, y: usize) -> RGBA {
+    pub fn get(&self, x: u32, y: u32) -> RGBA {
         let stride = self.stride();
         RGBA {
-            r: self.data[stride * y + (x * self.depth) + 0],
-            g: self.data[stride * y + (x * self.depth) + 1],
-            b: self.data[stride * y + (x * self.depth) + 2],
-            a: self.data[stride * y + (x * self.depth) + 3],
+            r: self.data[(stride * y + (x * self.depth) + 0) as usize],
+            g: self.data[(stride * y + (x * self.depth) + 1) as usize],
+            b: self.data[(stride * y + (x * self.depth) + 2) as usize],
+            a: self.data[(stride * y + (x * self.depth) + 3) as usize],
         }
     }
 
@@ -327,15 +327,15 @@ impl Picture {
         Ok(())
     }
 
-    pub fn stroke_string(&mut self, x: usize, y: usize, s: &str, char_size: f32, rgba: &RGBA) {
+    pub fn stroke_string(&mut self, x: u32, y: u32, s: &str, char_size: f32, rgba: &RGBA) {
         let mut i = 0;
         for c in s.chars().into_iter() {
-            self.stroke_letter(x + i * (char_size * 0.7 + 6.0) as usize, y, c, char_size, rgba);
+            self.stroke_letter(x + i * (char_size * 0.7 + 6.0) as u32, y, c, char_size, rgba);
             i += 1;
         }
     }
 
-    pub fn stroke_letter(&mut self, x: usize, y: usize, c: char, char_size: f32, rgba: &RGBA) {
+    pub fn stroke_letter(&mut self, x: u32, y: u32, c: char, char_size: f32, rgba: &RGBA) {
         let points = match c {
             '0' => vec![
                 Vec2::new(0.0, 0.0),
@@ -475,7 +475,7 @@ impl Picture {
     pub fn fill_rect(&mut self, x0: i32, y0: i32, x1: i32, y1: i32, rgba: &RGBA) {
         for x in x0.max(0)..=x1.min(self.width as i32 - 1) {
             for y in y0.max(0)..=y1.min(self.height as i32 - 1) {
-                self.set(x as usize, y as usize, rgba);
+                self.set(x as u32, y as u32, rgba);
             }
         }
     }

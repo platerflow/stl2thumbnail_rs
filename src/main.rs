@@ -123,12 +123,12 @@ fn main() -> Result<()> {
     let width = matches
         .value_of("WIDTH")
         .unwrap_or_default()
-        .parse::<usize>()
+        .parse::<u32>()
         .unwrap_or(256);
     let height = matches
         .value_of("HEIGHT")
         .unwrap_or_default()
-        .parse::<usize>()
+        .parse::<u32>()
         .unwrap_or(256);
 
     let settings = Settings {
@@ -187,8 +187,8 @@ fn main() -> Result<()> {
 }
 
 fn create(
-    width: usize,
-    height: usize,
+    width: u32,
+    height: u32,
     mesh: impl IntoIterator<Item = Triangle> + Copy,
     path: &str,
     settings: &Settings,
@@ -201,8 +201,8 @@ fn create(
 }
 
 fn create_still(
-    width: usize,
-    height: usize,
+    width: u32,
+    height: u32,
     mesh: impl IntoIterator<Item = Triangle> + Copy,
     path: &str,
     settings: &Settings,
@@ -227,8 +227,8 @@ fn create_still(
 }
 
 fn create_turntable_animation(
-    width: usize,
-    height: usize,
+    width: u32,
+    height: u32,
     mesh: impl IntoIterator<Item = Triangle> + Copy,
     path: &str,
     settings: &Settings,
