@@ -38,7 +38,7 @@ Section
     ; Write the uninstaller
     WriteUninstaller "$InstDir\uninstall.exe"
 
-    DetailPrint "Important: You may have to clean your cached thumbnails for this extension to work"
+    DetailPrint "Important: You may have to clear your cached thumbnails for this extension to work"
 SectionEnd
 
 ; ---------------------------------------------------------------------------------------------------------------
