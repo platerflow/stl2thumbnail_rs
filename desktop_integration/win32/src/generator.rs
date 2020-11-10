@@ -47,7 +47,7 @@ impl IThumbnailProvider for WinSTLThumbnailGenerator {
         let mut parser = Parser::from_buf(reader, false).unwrap();
 
         if let Ok(mesh) = parser.read_all() {
-            let mut backend = RasterBackend::new(cx as usize, cx as usize);
+            let mut backend = RasterBackend::new(cx as u32, cx as u32);
             let (aabb, scale) = backend.fit_mesh_scale(&mesh);
             backend.render_options.zoom = 1.05;
             // Note: Icon cache sizes seem to be 16,32,48,96,256,768,1280,...
