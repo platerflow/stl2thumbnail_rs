@@ -72,8 +72,8 @@ impl<T: Read + Seek> Parser<T> {
                 || triangle.normal == Vec3::new(0.0, 0.0, 0.0)
                 || triangle.normal == Vec3::new(std::f32::NAN, std::f32::NAN, std::f32::NAN)
             {
-                triangle.normal = (&triangle.vertices[1] - &triangle.vertices[0])
-                    .cross(&(&triangle.vertices[2] - &triangle.vertices[0]))
+                triangle.normal = (triangle.vertices[1] - triangle.vertices[0])
+                    .cross(&(triangle.vertices[2] - triangle.vertices[0]))
                     .normalize();
             }
         }
@@ -95,7 +95,7 @@ impl<T: Read + Seek> Parser<T> {
             StlType::Ascii => {
                 // we have no other choice as parsing the hole file
                 let mut count = 0;
-                while let Some(_) = self.next_triangle() {
+                while self.next_triangle().is_some() {
                     count += 1;
                 }
                 Ok(count)
@@ -157,11 +157,11 @@ fn read_ascii_triangle<T: BufRead>(reader: &mut T) -> Result<Triangle> {
 
     read_ascii_line(reader)?; // "outer loop"
 
-    for i in 0..3 {
+    for v in &mut vertices {
         let (vx, vy, vz) = scan_fmt!(&read_ascii_line(reader)?, "vertex {f} {f} {f}", f32, f32, f32)?;
-        vertices[i].x = vx;
-        vertices[i].y = vy;
-        vertices[i].z = vz;
+        v.x = vx;
+        v.y = vy;
+        v.z = vz;
     }
 
     read_ascii_line(reader)?; // "endloop"

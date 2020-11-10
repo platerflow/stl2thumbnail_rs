@@ -31,11 +31,11 @@ impl AABB {
     }
 
     pub fn size(&self) -> Vec3 {
-        &self.upper - &self.lower
+        self.upper - self.lower
     }
 
     pub fn center(&self) -> Vec3 {
-        &self.lower + &self.size() * 0.5
+        self.lower + self.size() * 0.5
     }
 
     pub fn apply_transform(&mut self, transform: &Mat4) {

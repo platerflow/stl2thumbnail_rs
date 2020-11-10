@@ -70,7 +70,7 @@ impl RasterBackend {
             &Vec3::new(0.0, 0.0, 0.0),
             &Vec3::new(0.0, 0.0, -1.0),
         );
-        &proj * &view
+        proj * view
     }
 
     pub fn fit_mesh_scale(&self, mesh: impl IntoIterator<Item = Triangle> + Copy) -> (AABB, f32) {
@@ -92,7 +92,7 @@ impl RasterBackend {
 
         let mut pic = Picture::new(self.width, self.height);
         let mut zbuf = ZBuffer::new(self.width, self.height);
-        let mut scaled_aabb = aabb.clone();
+        let mut scaled_aabb = *aabb;
 
         pic.fill(&(&self.render_options.background_color).into());
 
@@ -102,7 +102,7 @@ impl RasterBackend {
         let model = Mat4::identity()
             .append_translation(&-aabb.center())
             .append_scaling(model_scale);
-        let mvp = &vp * &model;
+        let mvp = vp * model;
 
         // let the AABB match the transformed model
         scaled_aabb.apply_transform(&model);
@@ -132,9 +132,9 @@ impl RasterBackend {
 
         for t in mesh {
             // timed out?
-            if timeout.is_some() {
+            if let Some(timeout) = timeout {
                 let dt = Instant::now() - start_time;
-                if dt > timeout.unwrap() {
+                if dt > timeout {
                     // abort
                     println!("... timeout!");
                     return pic;
@@ -209,17 +209,17 @@ impl RasterBackend {
 
                         if zbuf.test_and_set(x, y, frag_pos.z) {
                             // calculate lightning
-                            let light_normal = (&self.render_options.light_pos - &fp).normalize(); // normal frag pos to light (world space)
-                            let view_normal = (&self.render_options.view_pos - &fp).normalize(); // normal frag pos to view (world space)
+                            let light_normal = (self.render_options.light_pos - fp).normalize(); // normal frag pos to light (world space)
+                            let view_normal = (self.render_options.view_pos - fp).normalize(); // normal frag pos to view (world space)
                             let reflect_dir = glm::reflect_vec(&-light_normal, &normal);
 
                             // diffuse
                             let diff_color =
-                                glm::dot(&normal, &light_normal).max(0.0) * &self.render_options.light_color * 1.0;
+                                glm::dot(&normal, &light_normal).max(0.0) * self.render_options.light_color * 1.0;
 
                             // specular
                             let spec_color = (glm::dot(&view_normal, &reflect_dir).powf(16.0) * 0.7)
-                                * &self.render_options.light_color;
+                                * self.render_options.light_color;
 
                             // merge
                             let mut color = self.render_options.ambient_color + diff_color + spec_color;

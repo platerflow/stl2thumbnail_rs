@@ -165,7 +165,7 @@ impl Picture {
         for i in (0..self.data.len()).step_by(4) {
             bgra.push(self.data[i + 2]);
             bgra.push(self.data[i + 1]);
-            bgra.push(self.data[i + 0]);
+            bgra.push(self.data[i]);
             bgra.push(self.data[i + 3]);
         }
 
@@ -179,7 +179,7 @@ impl Picture {
     pub fn fill(&mut self, rgba: &RGBA) {
         for y in 0..self.height {
             for x in 0..self.width {
-                self.set(x, y, rgba.into());
+                self.set(x, y, rgba);
             }
         }
     }
@@ -279,7 +279,7 @@ impl Picture {
         }
 
         let stride = self.stride();
-        self.data[(stride * y + (x * self.depth) + 0) as usize] = rgba.r;
+        self.data[(stride * y + (x * self.depth)) as usize] = rgba.r;
         self.data[(stride * y + (x * self.depth) + 1) as usize] = rgba.g;
         self.data[(stride * y + (x * self.depth) + 2) as usize] = rgba.b;
         self.data[(stride * y + (x * self.depth) + 3) as usize] = rgba.a;
@@ -300,7 +300,7 @@ impl Picture {
     pub fn get(&self, x: u32, y: u32) -> RGBA {
         let stride = self.stride();
         RGBA {
-            r: self.data[(stride * y + (x * self.depth) + 0) as usize],
+            r: self.data[(stride * y + (x * self.depth)) as usize],
             g: self.data[(stride * y + (x * self.depth) + 1) as usize],
             b: self.data[(stride * y + (x * self.depth) + 2) as usize],
             a: self.data[(stride * y + (x * self.depth) + 3) as usize],
@@ -328,10 +328,8 @@ impl Picture {
     }
 
     pub fn stroke_string(&mut self, x: u32, y: u32, s: &str, char_size: f32, rgba: &RGBA) {
-        let mut i = 0;
-        for c in s.chars().into_iter() {
-            self.stroke_letter(x + i * (char_size * 0.7 + 6.0) as u32, y, c, char_size, rgba);
-            i += 1;
+        for (i, c) in s.chars().into_iter().enumerate() {
+            self.stroke_letter(x + i as u32 * (char_size * 0.7 + 6.0) as u32, y, c, char_size, rgba);
         }
     }
 
