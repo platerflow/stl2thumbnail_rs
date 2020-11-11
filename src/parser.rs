@@ -70,7 +70,7 @@ impl<T: Read + Seek> Parser<T> {
         if let Some(triangle) = &mut triangle {
             if self.recalculate_normals
                 || triangle.normal == Vec3::new(0.0, 0.0, 0.0)
-                || triangle.normal == Vec3::new(std::f32::NAN, std::f32::NAN, std::f32::NAN)
+                || triangle.normal == Vec3::new(f32::NAN, f32::NAN, f32::NAN)
             {
                 triangle.normal = (triangle.vertices[1] - triangle.vertices[0])
                     .cross(&(triangle.vertices[2] - triangle.vertices[0]))

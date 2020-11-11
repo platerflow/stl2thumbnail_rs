@@ -12,8 +12,8 @@ impl AABB {
     }
 
     pub fn from_iterable(mesh: impl IntoIterator<Item = Triangle> + Copy) -> Self {
-        let mut lower = Vec3::new(std::f32::MAX, std::f32::MAX, std::f32::MAX);
-        let mut upper = Vec3::new(std::f32::MIN, std::f32::MIN, std::f32::MIN);
+        let mut lower = Vec3::new(f32::MAX, f32::MAX, f32::MAX);
+        let mut upper = Vec3::new(f32::MIN, f32::MIN, f32::MIN);
 
         for t in mesh {
             let v = &t.vertices;
