@@ -307,12 +307,6 @@ impl Picture {
         }
     }
 
-    pub fn test_pattern(&mut self) {
-        for i in 0..self.height.min(self.width) {
-            self.set(i, i, &(255, 0, 0, 0).into());
-        }
-    }
-
     pub fn save(&self, path: &str) -> std::io::Result<()> {
         let file = std::fs::File::create(path)?;
         let buf = std::io::BufWriter::new(file);
