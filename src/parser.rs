@@ -239,7 +239,7 @@ mod test {
 
         assert_eq!(parser.triangle_count().unwrap(), 2);
 
-        let lazy_mesh = LazyMesh::new(parser);
+        let lazy_mesh = LazyMesh::new(&mut parser);
 
         let triangles = (&lazy_mesh).into_iter().collect::<Vec<Triangle>>();
         assert_eq!(
@@ -273,7 +273,7 @@ mod test {
 
         assert_eq!(parser.triangle_count().unwrap(), 1);
 
-        let lazy_mesh = LazyMesh::new(parser);
+        let lazy_mesh = LazyMesh::new(&mut parser);
 
         let triangles = (&lazy_mesh).into_iter().collect::<Vec<Triangle>>();
         assert_eq!(

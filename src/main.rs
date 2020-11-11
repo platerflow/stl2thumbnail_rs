@@ -176,7 +176,7 @@ fn main() -> Result<()> {
     let mut parser = Parser::from_file(&input, settings.recalculate_normals)?;
 
     if settings.lazy {
-        let parsed_mesh = LazyMesh::new(parser);
+        let parsed_mesh = LazyMesh::new(&mut parser);
         create(width, height, &parsed_mesh, &output, &settings)?;
     } else {
         let parsed_mesh = parser.read_all()?;

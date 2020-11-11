@@ -77,15 +77,15 @@ impl<'a> Iterator for MeshIter<'a> {
 }
 
 // LazyMesh
-pub struct LazyMesh<T: Read + Seek> {
-    parser: RefCell<Parser<T>>, // inner mutability
+pub struct LazyMesh<'a, T: Read + Seek> {
+    parser: RefCell<&'a mut Parser<T>>, // inner mutability
 }
 
-impl<T> LazyMesh<T>
+impl<'a, T> LazyMesh<'a, T>
 where
     T: Read + Seek,
 {
-    pub fn new(parser: Parser<T>) -> Self {
+    pub fn new(parser: &'a mut Parser<T>) -> Self {
         Self {
             parser: RefCell::new(parser),
         }
@@ -93,10 +93,10 @@ where
 }
 
 pub struct LazyMeshIter<'a, T: Read + Seek> {
-    parser: &'a RefCell<Parser<T>>,
+    parser: &'a RefCell<&'a mut Parser<T>>,
 }
 
-impl<'a, T: Read + Seek> IntoIterator for &'a LazyMesh<T> {
+impl<'a, 'b, T: Read + Seek> IntoIterator for &'a LazyMesh<'a, T> {
     type Item = Triangle;
     type IntoIter = LazyMeshIter<'a, T>;
 
