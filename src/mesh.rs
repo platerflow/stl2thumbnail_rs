@@ -77,7 +77,7 @@ pub fn matmul(m: &Mat4, v: &Vec3) -> Vec3 {
 
 // LazyMesh
 pub struct LazyMesh<T: Read + Seek> {
-    parser: RefCell<Box<Parser<T>>>, // inner mutability
+    parser: RefCell<Parser<T>>, // inner mutability
 }
 
 impl<T> LazyMesh<T>
@@ -86,13 +86,13 @@ where
 {
     pub fn new(parser: Parser<T>) -> Self {
         Self {
-            parser: RefCell::new(Box::new(parser)),
+            parser: RefCell::new(parser),
         }
     }
 }
 
 pub struct LazyMeshIter<'a, T: Read + Seek> {
-    parser: &'a RefCell<Box<Parser<T>>>,
+    parser: &'a RefCell<Parser<T>>,
 }
 
 impl<'a, T: Read + Seek> IntoIterator for &'a LazyMesh<T> {
