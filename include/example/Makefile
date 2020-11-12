@@ -6,4 +6,4 @@ run: clean build
 clean:
 	rm -f ./main
 build:
-	$(GCC_BIN) -o ./main ./main.c -L. -lstl2thumbnail -lm -ldl -pthread
+	$(GCC_BIN) -o ./main ./main.cpp -L. -lstl2thumbnail -lm -ldl -pthread
