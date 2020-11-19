@@ -88,7 +88,7 @@ fn main() -> Result<()> {
             Arg::with_name("SIZE_HINT")
                 .short("d")
                 .long("dimensions")
-                .help("Draws the dimensions underneath the model (requires height of at least 128 pixels)"),
+                .help("Draws the dimensions underneath the model (requires height of at least 256 pixels)"),
         )
         .arg(
             Arg::with_name("CAM_ELEVATION")
@@ -135,7 +135,7 @@ fn main() -> Result<()> {
         verbose: matches.is_present("VERBOSE"),
         lazy: matches.is_present("LAZY"),
         recalculate_normals: matches.is_present("RECALC_NORMALS"),
-        size_hint: matches.is_present("SIZE_HINT") && height >= 128,
+        size_hint: matches.is_present("SIZE_HINT") && height >= 256,
         turntable: matches.is_present("TURNTABLE"),
         grid: matches
             .value_of("GRID_VISIBLE")
