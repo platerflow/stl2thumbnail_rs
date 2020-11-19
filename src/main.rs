@@ -17,7 +17,7 @@ use rasterbackend::RasterBackend;
 
 use clap::{App, Arg};
 use std::error::Error;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 struct Settings {
     verbose: bool,
@@ -173,6 +173,7 @@ fn main() -> Result<()> {
         println!("Timeout               {:?}", settings.timeout);
     }
 
+    let start_time = Instant::now();
     let mut parser = Parser::from_file(&input, settings.recalculate_normals)?;
 
     if settings.lazy {
@@ -181,6 +182,14 @@ fn main() -> Result<()> {
     } else {
         let parsed_mesh = parser.read_all()?;
         create(width, height, &parsed_mesh, &output, &settings)?;
+    }
+
+    if settings.verbose {
+        println!(
+            "Saved as '{}' (took {}s)",
+            output,
+            (Instant::now() - start_time).as_secs_f32()
+        );
     }
 
     Ok(())
