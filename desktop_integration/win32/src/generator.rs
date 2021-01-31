@@ -1,17 +1,16 @@
-use crate::com_interface::{IInitializeWithStream, IStream, IThumbnailProvider};
+use crate::com_interface::{IInitializeWithStream, IThumbnailProvider};
 
-use com::sys::{HRESULT, NOERROR};
+use com::sys::{HRESULT, S_OK};
 
-use winapi::shared::minwindef::{DWORD, PINT, UINT};
+use winapi::shared::minwindef::{DWORD, PUINT, UINT};
 use winapi::shared::windef::HBITMAP;
 use winapi::shared::wtypes::STATFLAG_NONAME;
-use winapi::um::objidlbase::STATSTG;
+use winapi::um::objidlbase::{LPSTREAM, STATSTG};
 use winapi::um::wingdi::CreateBitmap;
 
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::io::Cursor;
-use std::ptr::null_mut;
 use std::time::Duration;
 
 use stl2thumbnail::parser::Parser;
@@ -28,14 +27,11 @@ com::class! {
             &self,
             cx: UINT,            // size in x & y dimension
             phbmp: *mut HBITMAP, // data ptr
-            pdw_alpha: PINT,
+            pdw_alpha: PUINT,
         ) -> com::sys::HRESULT {
-            *phbmp = null_mut();
-            *pdw_alpha = 0x0; // WTSAT_UNKNOWN
-
             let slice = &self.data.borrow()[..];
             let reader = Cursor::new(slice);
-            let mut parser = Parser::from_buf(reader, false).unwrap();
+            let mut parser = Parser::from_buf(reader, false).expect("Invalid input");
 
             if let Ok(mesh) = parser.read_all() {
                 let mut backend = RasterBackend::new(cx as u32, cx as u32);
@@ -50,7 +46,7 @@ com::class! {
                 *phbmp = create_hbitmap_from_picture(&pic);
                 *pdw_alpha = 0x2; // WTSAT_ARGB
 
-                return NOERROR;
+                return S_OK;
             }
 
             -1 // error
@@ -65,11 +61,11 @@ com::class! {
         }
     }
     impl IInitializeWithStream for WinSTLThumbnailGenerator {
-        unsafe fn initialize(&self, pstream: IStream, _grf_mode: DWORD) -> HRESULT {
+        unsafe fn initialize(&self, pstream: LPSTREAM, _grf_mode: DWORD) -> HRESULT {
               // figure out the length of the stream
               let mut stat: STATSTG = std::mem::zeroed();
 
-                if pstream.stat(&mut stat, STATFLAG_NONAME) != NOERROR {
+                if (*pstream).Stat(&mut stat, STATFLAG_NONAME) != S_OK {
                     return -2;
                 }
 
@@ -79,13 +75,17 @@ com::class! {
 
                 // read the entire stream
                 self.data.replace(vec![0; len as usize]);
-                pstream.read(
+                let res = (*pstream).Read(
                     self.data.borrow_mut().as_mut_ptr() as *mut c_void,
                     len as u32,
                     std::ptr::null_mut(),
                 );
 
-                return NOERROR;
+                if res != S_OK {
+                    return -1; // error
+                }
+
+                return S_OK;
         }
     }
 } // class
@@ -104,14 +104,63 @@ fn create_hbitmap_from_picture(pic: &Picture) -> HBITMAP {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ptr::null_mut;
 
     #[test]
     fn win_bitmap() {
         let mut pic = Picture::new(512, 512);
-        pic.test_pattern();
+        pic.fill(&(1.0, 0.0, 0.0, 1.0).into());
 
         let hbitmap = create_hbitmap_from_picture(&pic);
 
         assert!(hbitmap != null_mut());
+    }
+
+    #[test]
+    fn com() {
+        let instance = WinSTLThumbnailGenerator::allocate(Default::default());
+        let ithumbnail_handle = instance.query_interface::<IThumbnailProvider>();
+
+        assert!(ithumbnail_handle.is_some());
+    }
+
+    #[test]
+    fn com_create_thumbnail() {
+        let instance = WinSTLThumbnailGenerator::allocate(Default::default());
+        let ithumbnail_handle = instance.query_interface::<IThumbnailProvider>().unwrap();
+
+        let hbitmap: HBITMAP = std::ptr::null_mut();
+        let pdw_alpha: PUINT = std::ptr::null_mut();
+
+        let data = r"solid Exported from Blender-2.82 (sub 7)
+        facet normal 0.000000 0.000000 1.000000
+        outer loop
+        vertex -1.000000 -1.000000 0.000000
+        vertex 1.000000 -1.000000 0.000000
+        vertex 0.000000 1.000000 0.000000
+        endloop
+        endfacet
+        facet normal 0.000000 0.000000 1.000000
+        outer loop
+        vertex -1.000000 -1.000000 1.000000
+        vertex 1.000000 -1.000000 1.000000
+        vertex 0.000000 1.000000 1.000000
+        endloop
+        endfacet
+        endsolid Exported from Blender-2.82 (sub 7)";
+
+        instance.data.replace(data.as_bytes().to_vec());
+
+        unsafe {
+            ithumbnail_handle.get_thumbnail(
+                512,
+                &hbitmap as *const _ as *mut HBITMAP,
+                &pdw_alpha as *const _ as PUINT,
+            );
+        }
+
+        println!("Bitmap handle {:?}, alpha {:?}", hbitmap, pdw_alpha);
+        assert_ne!(hbitmap, std::ptr::null_mut());
+        assert_ne!(pdw_alpha, std::ptr::null_mut());
     }
 }
