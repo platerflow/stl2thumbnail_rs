@@ -11,6 +11,6 @@ crate-type = ["cdylib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-stl2thumbnail = { version="1.0", path = "../../" }
+stl2thumbnail = { version="1.0", path = "../../stl2thumbnail_rs" }
 com = "0.2.0"
 winapi = {version="0.3.9", features=["objidlbase", "winnt", "wtypes", "wingdi"]}
