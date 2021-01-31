@@ -29,8 +29,8 @@ com::class! {
             phbmp: *mut HBITMAP, // data ptr
             pdw_alpha: PUINT,
         ) -> com::sys::HRESULT {
-            let slice = &self.data.borrow()[..];
-            let reader = Cursor::new(slice);
+            let data = self.data.borrow();
+            let reader = Cursor::new(data.as_slice());
             let mut parser = Parser::from_buf(reader, false).expect("Invalid input");
 
             if let Ok(mesh) = parser.read_all() {
