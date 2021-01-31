@@ -21,7 +21,7 @@ jobs:
       
       # copy server.dll
       - name: dll copy
-        run: cp ${{ github.workspace }}/desktop_integration/win32/target/release/server.dll ${{ github.workspace }}/dist/NSIS
+        run: cp ${{ github.workspace }}/desktop_integration/win32/target/release/stl2thumbnail.dll ${{ github.workspace }}/dist/NSIS
           
       # create nullsoft installer
       - name: Create nsis installer
