@@ -435,10 +435,10 @@ impl Picture {
             ],
 
             'x' => vec![
-                Vec2::new(0.0, 0.0),
-                Vec2::new(1.0, 1.0),
-                Vec2::new(1.0, 0.0),
-                Vec2::new(0.0, 1.0),
+                Vec2::new(0.2, 0.2),
+                Vec2::new(0.8 / 0.6, 0.8),
+                Vec2::new(0.8 / 0.6, 0.2),
+                Vec2::new(0.2, 0.8),
             ],
 
             'm' => vec![
@@ -456,11 +456,11 @@ impl Picture {
         };
 
         for p in points.chunks(2) {
-            let x0 = p[0].x * char_size * 0.7 + x as f32;
+            let x0 = p[0].x * char_size * 0.6 + x as f32;
             let y0 = p[0].y * char_size + y as f32;
-            let x1 = p[1].x * char_size * 0.7 + x as f32;
+            let x1 = p[1].x * char_size * 0.6 + x as f32;
             let y1 = p[1].y * char_size + y as f32;
-            self.thick_line(x0 as i32, y0 as i32, x1 as i32, y1 as i32, rgba, 3.0);
+            self.thick_line(x0 as i32, y0 as i32, x1 as i32, y1 as i32, rgba, 2.9);
         }
     }
 
@@ -498,6 +498,8 @@ mod tests {
         pic.thick_line(0, 256, 512, 256, &(1.0, 0.0, 0.0, 1.0).into(), 1.0);
         pic.thick_line(256, 0, 256, 512, &(1.0, 0.0, 0.0, 1.0).into(), 1.0);
 
+        pic.thick_line(50, 50, 100, 75, &(0.0, 0.5, 0.5, 1.0).into(), 6.0);
+
         // plot chars
         let mut i = 0;
         for c in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'x', 'm'].iter() {
@@ -508,5 +510,24 @@ mod tests {
         pic.stroke_string(100, 200, "12x55mm", 10.0, &"E6E6E6FF".into());
 
         pic.save("test.png").unwrap();
+    }
+
+    #[test]
+    fn test_text() {
+        let mut pic = Picture::new(512, 512);
+        pic.fill(&(1.0, 1.0, 1.0, 1.0).into());
+
+        // plot chars
+        let mut i = 0;
+        for c in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'x', 'm'].iter() {
+            pic.stroke_letter(100 + i * 14, 100, *c, 10.0, &"000000FF".into());
+            i += 1;
+        }
+
+        for i in 0..6 {
+            pic.stroke_string(100, 200 + i * 20, "12x55mm", 10.0 + i as f32, &"000000FF".into());
+        }
+
+        pic.save("test_text.png").unwrap();
     }
 }
