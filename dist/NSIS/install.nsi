@@ -29,7 +29,7 @@ Section
     SetOutPath $InstDir
 
     ; Install library and register with regsvr32
-    !insertmacro InstallLib REGDLL NOTSHARED REBOOT_NOTPROTECTED "server.dll" "$InstDir\server.dll" "$SYSDIR"
+    !insertmacro InstallLib REGDLL NOTSHARED REBOOT_NOTPROTECTED "server.dll" "$InstDir\stl2thumbnail.dll" "$SYSDIR"
 
     ; Write register keys
     ; Register as thumbnail provider for STL files
@@ -46,7 +46,7 @@ SectionEnd
 ; ---------------------------------------------------------------------------------------------------------------
 Section "Uninstall"
     ; Remove library
-    !insertmacro UnInstallLib REGDLL NOTSHARED REBOOT_NOTPROTECTED "$INSTDIR\server.dll"
+    !insertmacro UnInstallLib REGDLL NOTSHARED REBOOT_NOTPROTECTED "$INSTDIR\stl2thumbnail.dll"
 
     ; Remove registry keys
     DeleteRegKey HKEY_CLASSES_ROOT ".STL\ShellEx\{E357FCCD-A995-4576-B01F-234630154E96}"
