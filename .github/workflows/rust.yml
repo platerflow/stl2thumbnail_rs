@@ -13,7 +13,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      
     - name: Build
       run: cargo build --verbose
+      working-directory: ${{ github.workspace }}/stl2thumbnail_rs
+      
     - name: Run tests
       run: cargo test --verbose
+      working-directory: ${{ github.workspace }}/stl2thumbnail_rs
