@@ -29,7 +29,7 @@ Section
     SetOutPath $InstDir
 
     ; Install library and register with regsvr32
-    !insertmacro InstallLib REGDLL NOTSHARED REBOOT_NOTPROTECTED "server.dll" "$InstDir\stl2thumbnail.dll" "$SYSDIR"
+    !insertmacro InstallLib REGDLL NOTSHARED REBOOT_NOTPROTECTED "stl2thumbnail.dll" "$InstDir\stl2thumbnail.dll" "$SYSDIR"
 
     ; Write register keys
     ; Register as thumbnail provider for STL files
