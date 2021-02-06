@@ -2,7 +2,7 @@
 
 _pkgname=stl2thumbnail_rs
 pkgname=stl2thumbnail-git
-pkgver=v0.99.r3.gb4aad7f
+pkgver=v0.99.r35.g0d7464f
 pkgrel=1
 pkgdesc="Enables file managers to generate thumbnails for STL files"
 arch=("i686" "x86_64")
@@ -25,7 +25,7 @@ pkgver() {
 }
 
 build() {
-  cd "${_pkgname}"
+  cd "${_pkgname}/stl2thumbnail_rs"
   cargo build --release
 }
 
@@ -35,16 +35,16 @@ prepare() {
 
 package() {
   mkdir -p "${pkgdir}/usr/bin"
-  cp "${_pkgname}/target/release/stl2thumbnail" "${pkgdir}/usr/bin"
+  cp "${_pkgname}/stl2thumbnail_rs/target/release/stl2thumbnail" "${pkgdir}/usr/bin"
   
   ls
   
   mkdir -p "${pkgdir}/usr/lib"
-  cp "${_pkgname}/target/release/libstl2thumbnail.so" "${pkgdir}/usr/lib"
+  cp "${_pkgname}/stl2thumbnail_rs/target/release/libstl2thumbnail.so" "${pkgdir}/usr/lib"
   
   mkdir -p "${pkgdir}/usr/share/thumbnailers"
   cp "${_pkgname}/desktop_integration/gnome/stl.thumbnailer" "${pkgdir}/usr/share/thumbnailers"
   
   mkdir -p "${pkgdir}/usr/include"
-  cp "${_pkgname}/include/stl2thumbnail.h" "${pkgdir}/usr/include"
+  cp "${_pkgname}/stl2thumbnail_rs/include/stl2thumbnail.h" "${pkgdir}/usr/include"
 }

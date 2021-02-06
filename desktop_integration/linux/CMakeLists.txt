@@ -4,9 +4,9 @@ include(GNUInstallDirs)
 
 project(stl2thumbnail-desktop VERSION 1.0)
 
-set(RUST_BUILD_DIR ${CMAKE_SOURCE_DIR}/../target/release)
+set(RUST_BUILD_DIR ${CMAKE_SOURCE_DIR}/../../stl2thumbnail_rs/target/release)
 set(RUST_CLI_PATH ${RUST_BUILD_DIR}/stl2thumbnail)
-set(RUST_INC_DIR ${CMAKE_SOURCE_DIR}/../include)
+set(RUST_INC_DIR ${CMAKE_SOURCE_DIR}/../../stl2thumbnail_rs/include)
 
 # stl2thumbnail rust lib
 add_library(stl2thumbnail-rs STATIC IMPORTED)
