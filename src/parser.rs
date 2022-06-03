@@ -1,7 +1,7 @@
 use crate::mesh::*;
 use anyhow::*;
 use byteorder::{LittleEndian, ReadBytesExt};
-use scan_fmt::*;
+//use scan_fmt::*;
 use std::fs;
 use std::io;
 use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
@@ -153,21 +153,21 @@ fn read_ascii_triangle<T: BufRead>(reader: &mut T) -> Result<Triangle> {
         Vec3::new(0.0, 0.0, 0.0),
     ];
 
-    let (nx, ny, nz) = scan_fmt!(&read_ascii_line(reader)?, "facet normal {f} {f} {f}", f32, f32, f32)?;
+    //let (nx, ny, nz) = scan_fmt!(&read_ascii_line(reader)?, "facet normal {f} {f} {f}", f32, f32, f32)?;
 
     read_ascii_line(reader)?; // "outer loop"
 
-    for v in &mut vertices {
+    /*for v in &mut vertices {
         let (vx, vy, vz) = scan_fmt!(&read_ascii_line(reader)?, "vertex {f} {f} {f}", f32, f32, f32)?;
         v.x = vx;
         v.y = vy;
         v.z = vz;
-    }
+    }*/
 
     read_ascii_line(reader)?; // "endloop"
     read_ascii_line(reader)?; // "endfacet"
 
-    Ok(Triangle::new(vertices, Vec3::new(nx, ny, nz)))
+    Ok(Triangle::new(vertices, Vec3::new(0.0, 0.0, 0.0)))
 }
 
 fn read_vec3<T: io::Read>(reader: &mut T) -> Result<Vec3> {
