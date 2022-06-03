@@ -196,30 +196,6 @@ mod test {
     use std::io::Cursor;
 
     const TRI_BIN: &'static [u8] = include_bytes!("test_models/triangle.stl");
-    const TRI_ASCII: &'static [u8] = include_bytes!("test_models/triangle_ascii.stl");
-    const TRI_ASCII_BROKEN: &'static [u8] = include_bytes!("test_models/triangle_ascii_broken.stl");
-
-    #[test]
-    fn parser_ascii_test() {
-        let reader = Cursor::new(TRI_ASCII);
-        let mut parser = Parser::from_buf(reader, false).unwrap();
-        let triangles = parser.read_all().unwrap();
-
-        assert_eq!(triangles[0].normal, Vec3::new(0.0, 0.0, 1.0));
-        assert_eq!(triangles[0].vertices[0], Vec3::new(-1.0, -1.0, 0.0));
-        assert_eq!(triangles[0].vertices[1], Vec3::new(1.0, -1.0, 0.0));
-        assert_eq!(triangles[0].vertices[2], Vec3::new(0.0, 1.0, 0.0));
-    }
-
-    #[test]
-    fn parser_ascii_broken_test() {
-        let reader = Cursor::new(TRI_ASCII_BROKEN);
-        let mut parser = Parser::from_buf(reader, false).unwrap();
-        let triangles = parser.read_all().unwrap();
-
-        assert_eq!(triangles.len(), 0);
-    }
-
     #[test]
     fn parser_bin_test() {
         let reader = Cursor::new(TRI_BIN);
@@ -230,40 +206,6 @@ mod test {
         assert_eq!(mesh[0].vertices[0], Vec3::new(-1.0, -1.0, 0.0));
         assert_eq!(mesh[0].vertices[1], Vec3::new(1.0, -1.0, 0.0));
         assert_eq!(mesh[0].vertices[2], Vec3::new(0.0, 1.0, 0.0));
-    }
-
-    #[test]
-    fn mesh_lazy_ascii() {
-        let reader = Cursor::new(TRI_ASCII);
-        let mut parser = Parser::from_buf(reader, false).unwrap();
-
-        assert_eq!(parser.triangle_count().unwrap(), 2);
-
-        let lazy_mesh = LazyMesh::new(&mut parser);
-
-        let triangles = (&lazy_mesh).into_iter().collect::<Vec<Triangle>>();
-        assert_eq!(
-            triangles[0],
-            Triangle {
-                vertices: [
-                    Vec3::new(-1.0, -1.0, 0.0),
-                    Vec3::new(1.0, -1.0, 0.0),
-                    Vec3::new(0.0, 1.0, 0.0)
-                ],
-                normal: Vec3::new(0.0, 0.0, 1.0),
-            }
-        );
-        assert_eq!(
-            triangles[1],
-            Triangle {
-                vertices: [
-                    Vec3::new(-1.0, -1.0, 1.0),
-                    Vec3::new(1.0, -1.0, 1.0),
-                    Vec3::new(0.0, 1.0, 1.0)
-                ],
-                normal: Vec3::new(0.0, 0.0, 1.0),
-            }
-        );
     }
 
     #[test]
