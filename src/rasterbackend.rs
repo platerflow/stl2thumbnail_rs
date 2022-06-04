@@ -29,7 +29,7 @@ impl Default for RenderOptions {
             ambient_color: Vec3::new(0.4, 0.4, 0.4),
             model_color: Vec3::new(0.0, 0.45, 1.0),
             grid_color: Vec3::new(0.1, 0.1, 0.1),
-            background_color: Vec4::new(1.0, 1.0, 1.0, 1.0),
+            background_color: Vec4::new(1.0, 1.0, 1.0, 0.0),
             grid_visible: true,
             zoom: 1.0,
             draw_size_hint: true,
